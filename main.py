@@ -28,10 +28,10 @@ def process_data(file_data):
                 
     is_bilingual = len(prefixes) >= 2
     
-    # Cleaning columns and ensuring "None" or numbers are treated as text
+    # Ensuring every cell is treated as a string to prevent "None" or numbers from breaking
     cols_to_clean = [col for col in df.columns if 'question_text' in col or 'option_' in col]
     for col in cols_to_clean:
-        df[col] = df[col].apply(lambda x: clean_html_content(str(x)) if x != "" else "")
+        df[col] = df[col].apply(lambda x: clean_html_content(str(x)) if str(x).strip() != "" else "")
 
     group_col = 'chapter'
     if is_bilingual and f"{prefixes[0]}_chapter" in df.columns:
@@ -50,7 +50,7 @@ def process_data(file_data):
                 tag1 = row.get(f"{p1}_exam_tag", row.get("exam_tag", ""))
                 tag2 = row.get(f"{p2}_exam_tag", row.get("exam_tag", ""))
                 
-                # Force string conversion to ensure "None" is printed
+                # Force string conversion for question text
                 qt1 = str(row[f"{p1}_question_text"]) + (f" &nbsp;<span style='color:#2563EB; font-size:0.9em;'><b>[{tag1}]</b></span>" if str(tag1).strip() else "")
                 qt2 = str(row[f"{p2}_question_text"]) + (f" &nbsp;<span style='color:#2563EB; font-size:0.9em;'><b>[{tag2}]</b></span>" if str(tag2).strip() else "")
                 
@@ -83,35 +83,39 @@ def process_data(file_data):
         })
     return df, chapters, is_bilingual
 
-# --- UPDATED: CLEANING + TABLE HANDLING + NONE FIX ---
+# --- AGGRESSIVE FIX: CLEANING + TABLE ALIGNMENT + NONE FIX ---
 def clean_html_content(text):
     if not isinstance(text, str): 
         if text is None: return "None"
         text = str(text)
     
-    if text.strip().lower() == "nan": return ""
+    if text.strip().lower() in ["nan", ""]: return ""
     
-    # 1. Unlock HTML
+    # 1. Unlock HTML Entities
     text = html.unescape(text)
     
-    # 2. Table styling - inject CSS into any <table> tag found
-    text = text.replace('<table', '<table style="width:100%; border-collapse:collapse; margin:5px 0; table-layout:fixed;"')
-    text = text.replace('<td', '<td style="border:1px solid #ccc; padding:4px; text-align:center; font-size:0.85em;"')
+    # 2. Strict Table Fix for Bilingual Alignment
+    # Fixed width, smaller font, and word-break to prevent column pushing
+    table_style = 'width:100%; border-collapse:collapse; margin:8px 0; table-layout: fixed; border: 1px solid #ccc;'
+    td_style = 'border:1px solid #ccc; padding:3px; text-align:center; font-size:8.5pt; overflow:hidden; word-wrap: break-word;'
     
-    # 3. Handle Paragraphs & Breaks
-    text = text.replace('<p>', '')
-    text = text.replace('</p>', '<br>')
+    text = text.replace('<table', f'<table style="{table_style}"')
+    text = text.replace('<td', f'<td style="{td_style}"')
+    text = text.replace('<th', f'<th style="{td_style} background-color:#f2f2f2;"')
+    
+    # 3. Compact Breaks: Replace paragraphs with single breaks
+    text = text.replace('<p>', '').replace('</p>', '<br>')
     text = text.replace('\n', '<br>')
     
-    # 4. Strict spacing (No double gaps)
+    # 4. Spacing Fix: Max 1 line break allowed between lines
     text = re.sub(r'(<br\s*/?>\s*){2,}', '<br>', text)
     
-    # 5. Clean edges
+    # 5. Trim leading/trailing breaks
     text = text.strip()
     text = re.sub(r'^(<br\s*/?>\s*)+', '', text)
     text = re.sub(r'(<br\s*/?>\s*)+$', '', text)
     
-    # 6. Image & Maths
+    # 6. Image & Maths handling
     text = text.replace('src="//', 'src="https://')
 
     def replace_math(match):
@@ -125,7 +129,7 @@ def get_base64_image(uploaded_file):
         return f"data:{uploaded_file.type};base64,{base64.b64encode(uploaded_file.getvalue()).decode()}"
     return None
 
-# --- REST OF THE CODE REMAINS EXACTLY SAME ---
+# --- UI & RENDERING (NO CHANGES HERE) ---
 with st.sidebar:
     st.header("⚙️ Promotion Setup")
     promo_tier = st.radio("Promotion Tier", ["Without Promotions", "With Promotions"])
