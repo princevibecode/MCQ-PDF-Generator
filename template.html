@@ -29,7 +29,7 @@
 
             @bottom-right-corner {
                content: counter(page);
-                font-family: Arial, sans-serif;
+                font-family: 'Noto Serif', serif; /* Matching body font */
                 font-size: 10pt;
                 font-weight: bold;
                 padding-right: 5mm;
@@ -42,6 +42,20 @@
             line-height: 1.4;
             margin: 0;
             color: #111827;
+        }
+
+        /* --- BILINGUAL ALIGNMENT FIX --- */
+        .bilingual-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed; /* Force columns to stay 50-50 */
+        }
+        .bilingual-cell {
+            width: 50%;
+            vertical-align: top; /* Always start from top */
+            padding-bottom: 10px;
+            word-wrap: break-word; /* Prevent text from escaping */
+            overflow: hidden;
         }
 
         .header-left-box { position: running(headerLeft); text-align: left; height: {{ header_height }}px; padding-top: 5mm; margin-left: -8mm; }
@@ -65,8 +79,12 @@
 
         .two-column-layout { column-count: 2; column-gap: 8mm; column-rule: 1px solid #E5E7EB; }
 
-        .question-block { break-inside: avoid; }
+        .question-block { break-inside: avoid; margin-bottom: 10px; }
         .question-block img { max-width: 100%; height: auto; display: block; margin: 5px 0; }
+
+        /* Question tables inside cells fix */
+        .question-block table { width: 100% !important; border-collapse: collapse; margin: 5px 0; }
+        .question-block td { border: 1px solid #ccc; padding: 3px; text-align: center; font-size: 0.9em; }
 
         .q-main-text { font-weight: bold; margin-bottom: 8px; }
         .q-main-text p { display: inline; margin: 0; }
@@ -74,11 +92,11 @@
         ol { margin-top: 4px; margin-bottom: 0; padding-left: 20px; font-weight: normal; }
         li { margin-bottom: 4px; }
 
-        .basic-style { margin-bottom: 15px; padding: 0; background: transparent; border: none; }
-        .advance-style { background-color: #FFFFFF; border: 1px solid #E5E7EB; border-left-width: 5px; border-left-style: solid; border-radius: 6px; padding: 12px; margin-bottom: 18px; }
-        .grey-box-style { background-color: #F3F4F6; border: 1px solid #D1D5DB; border-radius: 8px; padding: 12px; margin-bottom: 18px; }
+        .basic-style { padding: 5px 0; background: transparent; border: none; }
+        .advance-style { background-color: #FFFFFF; border: 1px solid #E5E7EB; border-left-width: 5px; border-left-style: solid; border-radius: 6px; padding: 12px; margin-bottom: 10px; }
+        .grey-box-style { background-color: #F3F4F6; border: 1px solid #D1D5DB; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
 
-        .inline-answer-box { background-color: #F9FAFB; border-radius: 6px; padding: 6px 12px; font-weight: bold; font-size: 9pt; display: inline-block; margin-top: 8px; border-width: 1px; border-style: solid; }
+        .inline-answer-box { background-color: #F9FAFB; border-radius: 6px; padding: 4px 10px; font-weight: bold; font-size: 9pt; display: inline-block; margin-top: 5px; border-width: 1px; border-style: solid; }
 
         .answer-key-section { margin-top: 25px; break-inside: avoid; }
         .answer-key-title { font-size: 12pt; font-weight: bold; margin-bottom: 5px; color: {{ user_color }}; }
@@ -121,12 +139,12 @@
         {% set strip_colors = ['#4A90E2', '#50E3C2', '#F5A623', '#48C9B0'] %}
 
         {% if is_bilingual %}
-            <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+            <table class="bilingual-table">
                 {% for row in chapter.rows %}
                     {% set current_color = strip_colors[loop.index0 % 4] %}
                     <tr style="break-inside: avoid;">
 
-                        <td style="width: 50%; vertical-align: top; padding-right: 15px; border-right: 1px solid #E5E7EB; padding-bottom: 15px;">
+                        <td class="bilingual-cell" style="padding-right: 15px; border-right: 1px solid #E5E7EB;">
                             {% if question_style == 'Colorful Strip' %}
                                 <div class="question-block advance-style" style="border-left-color: {{ current_color }};">
                             {% elif question_style == 'Grey Box' %}
@@ -147,7 +165,7 @@
                             </div>
                         </td>
 
-                        <td style="width: 50%; vertical-align: top; padding-left: 15px; padding-bottom: 15px;">
+                        <td class="bilingual-cell" style="padding-left: 15px;">
                             {% if question_style == 'Colorful Strip' %}
                                 <div class="question-block advance-style" style="border-left-color: {{ current_color }};">
                             {% elif question_style == 'Grey Box' %}
