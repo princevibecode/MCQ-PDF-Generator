@@ -27,11 +27,18 @@ def process_data(file_data):
                 
     is_bilingual = len(prefixes) >= 2
     
+    # Cleaning data with updated compact spacing function
     cols_to_clean = [col for col in df.columns if 'question_text' in col or 'option_' in col]
     for col in cols_to_clean:
         df[col] = df[col].apply(clean_html_content)
 
-    group_col = f"{prefixes[0]}_chapter" if is_bilingual and f"{prefixes[0]}_chapter" in df.columns else 'chapter'
+    # Smart Chapter Grouping
+    group_col = 'chapter'
+    if is_bilingual and f"{prefixes[0]}_chapter" in df.columns:
+        group_col = f"{prefixes[0]}_chapter"
+    elif 'chapter' not in df.columns:
+        group_col = df.columns[0] if not df.empty else 'chapter'
+    
     grouped = df.groupby(group_col, sort=False)
     
     chapters = []
@@ -69,36 +76,36 @@ def process_data(file_data):
         })
     return df, chapters, is_bilingual
 
-# --- SIRF YAHI FUNCTION CHANGE KIYA HAI LINE BREAKS KE LIYE ---
+# --- UPDATED: COMPACT LINE BREAK FUNCTION ---
 def clean_html_content(text):
     if not isinstance(text, str): return text
     
-    # 1. Locked HTML ko asli HTML mein badalna
+    # 1. Unlock HTML Entities
     text = html.unescape(text)
     
-    # 2. Paragraphs aur Enters ko Line Breaks (<br>) mein badalna
-    text = text.replace('</p>', '<br><br>')
+    # 2. Convert paragraphs to single line breaks for compact view
     text = text.replace('<p>', '')
+    text = text.replace('</p>', '<br>')
+    
+    # 3. Handle raw newlines
     text = text.replace('\n', '<br>')
     
-    # 3. Faltu ke bade gaps ko theek karna
-    text = re.sub(r'(<br\s*/?>\s*){3,}', '<br><br>', text)
+    # 4. Strict spacing: convert multiple breaks into single breaks
+    text = re.sub(r'(<br\s*/?>\s*){2,}', '<br>', text)
     
-    # 4. Question ke shuru aur aakhiri ka faltu space/break hatana
+    # 5. Remove leading/trailing breaks
     text = text.strip()
     text = re.sub(r'^(<br\s*/?>\s*)+', '', text)
     text = re.sub(r'(<br\s*/?>\s*)+$', '', text)
     
-    # 5. Image links theek karna
+    # 6. Image & Maths fixes
     text = text.replace('src="//', 'src="https://')
 
-    # 6. Maths (LaTeX) code theek karna
     def replace_math(match):
         encoded = urllib.parse.quote("\\Large " + match.group(1).strip())
         return f'<img src="https://latex.codecogs.com/svg.image?{encoded}" style="vertical-align: middle; border: none; margin: 0 2px;" />'
 
     return re.sub(r'\\\((.*?)\\\)', replace_math, text)
-# --------------------------------------------------------------
 
 def get_base64_image(uploaded_file):
     if uploaded_file is not None:
@@ -162,7 +169,6 @@ with st.sidebar:
     selected_font_size = st.slider("Font Size (pt)", min_value=8, max_value=16, value=11)
     selected_color = st.color_picker("Primary Color (Chapters, Index & Inline Answer)", "#00d1ff")
 
-    # --- NEW FEATURE: COVER & LAST PAGE PDF ATTACHMENT ---
     st.divider()
     st.header("📄 PDF Attachments")
     st.caption("Optional: Attach A4 PDF pages to the start and end of your test paper.")
@@ -215,19 +221,12 @@ if uploaded_file is not None:
             # --- PDF MERGING LOGIC ---
             if front_page_pdf is not None or last_page_pdf is not None:
                 merger = PdfWriter()
-                
-                # 1. Add Front Page if uploaded
                 if front_page_pdf is not None:
                     merger.append(PdfReader(front_page_pdf))
-                
-                # 2. Add Main Generated Test Paper
                 merger.append(PdfReader(io.BytesIO(pdf_bytes)))
-                
-                # 3. Add Last Page if uploaded
                 if last_page_pdf is not None:
                     merger.append(PdfReader(last_page_pdf))
-                    
-                # Save the merged result
+                
                 output_stream = io.BytesIO()
                 merger.write(output_stream)
                 pdf_bytes = output_stream.getvalue()
