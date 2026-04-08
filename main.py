@@ -69,15 +69,36 @@ def process_data(file_data):
         })
     return df, chapters, is_bilingual
 
+# --- SIRF YAHI FUNCTION CHANGE KIYA HAI LINE BREAKS KE LIYE ---
 def clean_html_content(text):
     if not isinstance(text, str): return text
-    text = html.unescape(text).replace('src="//', 'src="https://')
+    
+    # 1. Locked HTML ko asli HTML mein badalna
+    text = html.unescape(text)
+    
+    # 2. Paragraphs aur Enters ko Line Breaks (<br>) mein badalna
+    text = text.replace('</p>', '<br><br>')
+    text = text.replace('<p>', '')
+    text = text.replace('\n', '<br>')
+    
+    # 3. Faltu ke bade gaps ko theek karna
+    text = re.sub(r'(<br\s*/?>\s*){3,}', '<br><br>', text)
+    
+    # 4. Question ke shuru aur aakhiri ka faltu space/break hatana
+    text = text.strip()
+    text = re.sub(r'^(<br\s*/?>\s*)+', '', text)
+    text = re.sub(r'(<br\s*/?>\s*)+$', '', text)
+    
+    # 5. Image links theek karna
+    text = text.replace('src="//', 'src="https://')
 
+    # 6. Maths (LaTeX) code theek karna
     def replace_math(match):
         encoded = urllib.parse.quote("\\Large " + match.group(1).strip())
         return f'<img src="https://latex.codecogs.com/svg.image?{encoded}" style="vertical-align: middle; border: none; margin: 0 2px;" />'
 
     return re.sub(r'\\\((.*?)\\\)', replace_math, text)
+# --------------------------------------------------------------
 
 def get_base64_image(uploaded_file):
     if uploaded_file is not None:
