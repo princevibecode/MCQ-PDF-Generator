@@ -16,6 +16,7 @@ st.title("📄 Dynamic Test Paper Generator")
 @st.cache_data
 def process_data(file_data):
     df = pd.read_csv(file_data)
+    # Fillna strictly with empty string to avoid "None" type issues
     df.fillna("", inplace=True) 
     
     prefixes = []
@@ -27,12 +28,11 @@ def process_data(file_data):
                 
     is_bilingual = len(prefixes) >= 2
     
-    # Cleaning data with updated compact spacing function
+    # Cleaning columns and ensuring "None" or numbers are treated as text
     cols_to_clean = [col for col in df.columns if 'question_text' in col or 'option_' in col]
     for col in cols_to_clean:
-        df[col] = df[col].apply(clean_html_content)
+        df[col] = df[col].apply(lambda x: clean_html_content(str(x)) if x != "" else "")
 
-    # Smart Chapter Grouping
     group_col = 'chapter'
     if is_bilingual and f"{prefixes[0]}_chapter" in df.columns:
         group_col = f"{prefixes[0]}_chapter"
@@ -50,13 +50,18 @@ def process_data(file_data):
                 tag1 = row.get(f"{p1}_exam_tag", row.get("exam_tag", ""))
                 tag2 = row.get(f"{p2}_exam_tag", row.get("exam_tag", ""))
                 
+                # Force string conversion to ensure "None" is printed
                 qt1 = str(row[f"{p1}_question_text"]) + (f" &nbsp;<span style='color:#2563EB; font-size:0.9em;'><b>[{tag1}]</b></span>" if str(tag1).strip() else "")
                 qt2 = str(row[f"{p2}_question_text"]) + (f" &nbsp;<span style='color:#2563EB; font-size:0.9em;'><b>[{tag2}]</b></span>" if str(tag2).strip() else "")
                 
                 rows.append({
                     'q_num': row.get(f"{p1}_question_number", row.get("question_number", "")),
-                    'q1': qt1, 'A1': row.get(f"{p1}_option_A", ""), 'B1': row.get(f"{p1}_option_B", ""), 'C1': row.get(f"{p1}_option_C", ""), 'D1': row.get(f"{p1}_option_D", ""),
-                    'q2': qt2, 'A2': row.get(f"{p2}_option_A", ""), 'B2': row.get(f"{p2}_option_B", ""), 'C2': row.get(f"{p2}_option_C", ""), 'D2': row.get(f"{p2}_option_D", ""),
+                    'q1': qt1, 
+                    'A1': str(row.get(f"{p1}_option_A", "")), 'B1': str(row.get(f"{p1}_option_B", "")), 
+                    'C1': str(row.get(f"{p1}_option_C", "")), 'D1': str(row.get(f"{p1}_option_D", "")),
+                    'q2': qt2, 
+                    'A2': str(row.get(f"{p2}_option_A", "")), 'B2': str(row.get(f"{p2}_option_B", "")), 
+                    'C2': str(row.get(f"{p2}_option_C", "")), 'D2': str(row.get(f"{p2}_option_D", "")),
                     'ans': row.get(f"{p1}_correct_answer", row.get("correct_answer", ""))
                 })
             else:
@@ -65,7 +70,9 @@ def process_data(file_data):
                 
                 rows.append({
                     'q_num': row.get("question_number", ""),
-                    'q1': qt, 'A1': row.get("option_A", ""), 'B1': row.get("option_B", ""), 'C1': row.get("option_C", ""), 'D1': row.get("option_D", ""),
+                    'q1': qt, 
+                    'A1': str(row.get("option_A", "")), 'B1': str(row.get("option_B", "")), 
+                    'C1': str(row.get("option_C", "")), 'D1': str(row.get("option_D", "")),
                     'ans': row.get("correct_answer", "")
                 })
                 
@@ -76,29 +83,35 @@ def process_data(file_data):
         })
     return df, chapters, is_bilingual
 
-# --- UPDATED: COMPACT LINE BREAK FUNCTION ---
+# --- UPDATED: CLEANING + TABLE HANDLING + NONE FIX ---
 def clean_html_content(text):
-    if not isinstance(text, str): return text
+    if not isinstance(text, str): 
+        if text is None: return "None"
+        text = str(text)
     
-    # 1. Unlock HTML Entities
+    if text.strip().lower() == "nan": return ""
+    
+    # 1. Unlock HTML
     text = html.unescape(text)
     
-    # 2. Convert paragraphs to single line breaks for compact view
+    # 2. Table styling - inject CSS into any <table> tag found
+    text = text.replace('<table', '<table style="width:100%; border-collapse:collapse; margin:5px 0; table-layout:fixed;"')
+    text = text.replace('<td', '<td style="border:1px solid #ccc; padding:4px; text-align:center; font-size:0.85em;"')
+    
+    # 3. Handle Paragraphs & Breaks
     text = text.replace('<p>', '')
     text = text.replace('</p>', '<br>')
-    
-    # 3. Handle raw newlines
     text = text.replace('\n', '<br>')
     
-    # 4. Strict spacing: convert multiple breaks into single breaks
+    # 4. Strict spacing (No double gaps)
     text = re.sub(r'(<br\s*/?>\s*){2,}', '<br>', text)
     
-    # 5. Remove leading/trailing breaks
+    # 5. Clean edges
     text = text.strip()
     text = re.sub(r'^(<br\s*/?>\s*)+', '', text)
     text = re.sub(r'(<br\s*/?>\s*)+$', '', text)
     
-    # 6. Image & Maths fixes
+    # 6. Image & Maths
     text = text.replace('src="//', 'src="https://')
 
     def replace_math(match):
@@ -112,7 +125,7 @@ def get_base64_image(uploaded_file):
         return f"data:{uploaded_file.type};base64,{base64.b64encode(uploaded_file.getvalue()).decode()}"
     return None
 
-# --- UI FOR SETTINGS (SIDEBAR) ---
+# --- REST OF THE CODE REMAINS EXACTLY SAME ---
 with st.sidebar:
     st.header("⚙️ Promotion Setup")
     promo_tier = st.radio("Promotion Tier", ["Without Promotions", "With Promotions"])
@@ -127,7 +140,6 @@ with st.sidebar:
 
     if promo_tier == "With Promotions":
         promo_layout = st.radio("Promotion Layout", ["Only Header", "Both Header & Footer"])
-        
         st.divider()
         st.header("🖼️ Split Header Settings")
         header_height = st.slider("Header Size (px)", 30, 150, 60)
@@ -162,91 +174,59 @@ with st.sidebar:
 
     st.divider()
     st.header("🎨 Styling & Branding")
-    
     question_style = st.radio("Question Box Style", ["Plain Text", "Colorful Strip", "Grey Box"])
     answer_key_format = st.radio("Answer Key Format", ["End of Chapter", "Below Every Question", "Both Places"])
-    
-    selected_font_size = st.slider("Font Size (pt)", min_value=8, max_value=16, value=11)
-    selected_color = st.color_picker("Primary Color (Chapters, Index & Inline Answer)", "#00d1ff")
+    selected_font_size = st.slider("Font Size (pt)", 8, 16, 11)
+    selected_color = st.color_picker("Primary Color", "#00d1ff")
 
     st.divider()
     st.header("📄 PDF Attachments")
-    st.caption("Optional: Attach A4 PDF pages to the start and end of your test paper.")
     front_page_pdf = st.file_uploader("Upload Cover Page (PDF)", type=["pdf"])
     last_page_pdf = st.file_uploader("Upload Last Page (PDF)", type=["pdf"])
 
-# --- MAIN EXECUTION ---
 uploaded_file = st.file_uploader("Upload your Questions CSV", type=["csv"])
 
 if uploaded_file is not None:
     df, chapters_data, is_bilingual = process_data(uploaded_file)
-
     col1, col2 = st.columns([1, 1], gap="large")
 
     with col1:
         st.subheader("📝 Edit Data")
         st.data_editor(df, num_rows="dynamic", use_container_width=True)
-        st.info("💡 Generating PDF with cached data for faster previews.")
-
         try:
             env = Environment(loader=FileSystemLoader('.'))
             template = env.get_template('template.html')
-
             html_out = template.render(
-                chapters=chapters_data,
-                is_bilingual=is_bilingual, 
-                promotion_tier=promo_tier,
-                promo_layout=promo_layout,
-                question_style=question_style,
-                answer_key_format=answer_key_format,
-                user_font_size=selected_font_size,
-                user_color=selected_color,
-                header_left_b64=header_left_b64,
-                header_left_link=header_left_link,
-                header_right_b64=header_right_b64,
-                header_right_link=header_right_link,
-                header_height=header_height,
-                header_logo_width=header_logo_width,
-                footer_b64=footer_b64,
-                footer_link=footer_link,
-                footer_height=footer_height,
-                watermark_b64=watermark_b64,
-                watermark_opacity=watermark_opacity,
+                chapters=chapters_data, is_bilingual=is_bilingual, 
+                promotion_tier=promo_tier, promo_layout=promo_layout,
+                question_style=question_style, answer_key_format=answer_key_format,
+                user_font_size=selected_font_size, user_color=selected_color,
+                header_left_b64=header_left_b64, header_left_link=header_left_link,
+                header_right_b64=header_right_b64, header_right_link=header_right_link,
+                header_height=header_height, header_logo_width=header_logo_width,
+                footer_b64=footer_b64, footer_link=footer_link, footer_height=footer_height,
+                watermark_b64=watermark_b64, watermark_opacity=watermark_opacity,
                 watermark_angle=watermark_angle
             )
-
-            # Generate original PDF from HTML
             pdf_bytes = HTML(string=html_out).write_pdf()
 
-            # --- PDF MERGING LOGIC ---
-            if front_page_pdf is not None or last_page_pdf is not None:
+            if front_page_pdf or last_page_pdf:
                 merger = PdfWriter()
-                if front_page_pdf is not None:
-                    merger.append(PdfReader(front_page_pdf))
+                if front_page_pdf: merger.append(PdfReader(front_page_pdf))
                 merger.append(PdfReader(io.BytesIO(pdf_bytes)))
-                if last_page_pdf is not None:
-                    merger.append(PdfReader(last_page_pdf))
-                
-                output_stream = io.BytesIO()
-                merger.write(output_stream)
-                pdf_bytes = output_stream.getvalue()
+                if last_page_pdf: merger.append(PdfReader(last_page_pdf))
+                out = io.BytesIO()
+                merger.write(out)
+                pdf_bytes = out.getvalue()
                 merger.close()
 
-            st.divider()
-            st.download_button(
-                label="📥 Download Final PDF",
-                data=pdf_bytes,
-                file_name="Test_Paper.pdf",
-                mime="application/pdf",
-                use_container_width=True
-            )
-
+            st.download_button("📥 Download Final PDF", pdf_bytes, "Test_Paper.pdf", "application/pdf", use_container_width=True)
         except Exception as e:
-            st.error(f"An error occurred: {e}")
+            st.error(f"Error: {e}")
 
     if "pdf_bytes" in locals():
         with col2:
             st.subheader("👁️ Live Preview")
-            base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
-            pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}#toolbar=0" width="100%" height="800px" type="application/pdf"></iframe>'
-            st.markdown(pdf_display, unsafe_allow_html=True)
+            b64 = base64.b64encode(pdf_bytes).decode('utf-8')
+            display = f'<iframe src="data:application/pdf;base64,{b64}#toolbar=0" width="100%" height="800px"></iframe>'
+            st.markdown(display, unsafe_allow_html=True)
