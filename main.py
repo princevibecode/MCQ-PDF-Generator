@@ -76,10 +76,13 @@ def process_data(file_data):
                     'ans': row.get("correct_answer", "")
                 })
                 
+        mid = (len(rows) + 1) // 2
         chapters.append({
             'name': str(chapter_name),
             'count': len(rows),
-            'rows': rows
+            'rows': rows,
+            'left_col': rows[:mid],
+            'right_col': rows[mid:]
         })
     return df, chapters, is_bilingual
 
