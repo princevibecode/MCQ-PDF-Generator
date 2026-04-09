@@ -28,8 +28,8 @@
             {% endif %}
 
             @bottom-right-corner {
-               content: counter(page);
-                font-family: 'Noto Serif', serif; /* Matching body font */
+                content: counter(page);
+                font-family: 'Noto Serif', serif;
                 font-size: 10pt;
                 font-weight: bold;
                 padding-right: 5mm;
@@ -44,18 +44,34 @@
             color: #111827;
         }
 
-        /* --- BILINGUAL ALIGNMENT FIX --- */
+        /* --- STRICT ALIGNMENT & TABLE FIXES --- */
         .bilingual-table {
             width: 100%;
             border-collapse: collapse;
-            table-layout: fixed; /* Force columns to stay 50-50 */
+            table-layout: fixed; /* Keep columns 50-50 */
         }
         .bilingual-cell {
             width: 50%;
-            vertical-align: top; /* Always start from top */
-            padding-bottom: 10px;
-            word-wrap: break-word; /* Prevent text from escaping */
+            vertical-align: top !important; /* Fixes "Mismatch" alignment */
+            padding-bottom: 15px;
+            word-wrap: break-word;
             overflow: hidden;
+        }
+
+        /* Match the following tables inside cells */
+        .question-block table {
+            width: 100% !important;
+            max-width: 100% !important;
+            table-layout: auto !important; 
+            margin: 10px 0 !important;
+            border-collapse: collapse !important;
+            page-break-inside: avoid;
+        }
+        .question-block td {
+            padding: 4px !important;
+            vertical-align: middle !important;
+            font-size: 0.9em !important;
+            border: 1px solid #ccc !important;
         }
 
         .header-left-box { position: running(headerLeft); text-align: left; height: {{ header_height }}px; padding-top: 5mm; margin-left: -8mm; }
@@ -81,10 +97,6 @@
 
         .question-block { break-inside: avoid; margin-bottom: 10px; }
         .question-block img { max-width: 100%; height: auto; display: block; margin: 5px 0; }
-
-        /* Question tables inside cells fix */
-        .question-block table { width: 100% !important; border-collapse: collapse; margin: 5px 0; }
-        .question-block td { border: 1px solid #ccc; padding: 3px; text-align: center; font-size: 0.9em; }
 
         .q-main-text { font-weight: bold; margin-bottom: 8px; }
         .q-main-text p { display: inline; margin: 0; }
@@ -121,7 +133,6 @@
 
     <div style="break-after: page;">
         <h1 style="text-align: center; color: {{ user_color }}; font-size: 24pt; margin-bottom: 40px;">Table of Contents</h1>
-
         {% for chapter in chapters %}
             <div style="margin-bottom: 18px; font-size: 14pt;">
                 <a href="#chapter-{{ loop.index }}" class="index-link">
@@ -143,7 +154,6 @@
                 {% for row in chapter.rows %}
                     {% set current_color = strip_colors[loop.index0 % 4] %}
                     <tr style="break-inside: avoid;">
-
                         <td class="bilingual-cell" style="padding-right: 15px; border-right: 1px solid #E5E7EB;">
                             {% if question_style == 'Colorful Strip' %}
                                 <div class="question-block advance-style" style="border-left-color: {{ current_color }};">
@@ -156,7 +166,6 @@
                                 <ol type="A">
                                     <li>{{ row['A1'] | safe }}</li><li>{{ row['B1'] | safe }}</li><li>{{ row['C1'] | safe }}</li><li>{{ row['D1'] | safe }}</li>
                                 </ol>
-
                                 {% if answer_key_format in ['Below Every Question', 'Both Places'] %}
                                     <div class="inline-answer-box" style="color: {{ user_color }}; border-color: {{ user_color }};">
                                         CORRECT ANSWER: {{ row['ans'] }}
@@ -177,7 +186,6 @@
                                 <ol type="A">
                                     <li>{{ row['A2'] | safe }}</li><li>{{ row['B2'] | safe }}</li><li>{{ row['C2'] | safe }}</li><li>{{ row['D2'] | safe }}</li>
                                 </ol>
-
                                 {% if answer_key_format in ['Below Every Question', 'Both Places'] %}
                                     <div class="inline-answer-box" style="color: {{ user_color }}; border-color: {{ user_color }};">
                                         CORRECT ANSWER: {{ row['ans'] }}
@@ -185,16 +193,13 @@
                                 {% endif %}
                             </div>
                         </td>
-
                     </tr>
                 {% endfor %}
             </table>
-
         {% else %}
             <div class="two-column-layout">
                 {% for row in chapter.rows %}
                     {% set current_color = strip_colors[loop.index0 % 4] %}
-
                     {% if question_style == 'Colorful Strip' %}
                         <div class="question-block advance-style" style="border-left-color: {{ current_color }};">
                     {% elif question_style == 'Grey Box' %}
@@ -202,17 +207,10 @@
                     {% else %}
                         <div class="question-block basic-style">
                     {% endif %}
-
-                        <div class="q-main-text">
-                            {{ row['q_num'] }}. {{ row['q1'] | safe }}
-                        </div>
+                        <div class="q-main-text">{{ row['q_num'] }}. {{ row['q1'] | safe }}</div>
                         <ol type="A">
-                            <li>{{ row['A1'] | safe }}</li>
-                            <li>{{ row['B1'] | safe }}</li>
-                            <li>{{ row['C1'] | safe }}</li>
-                            <li>{{ row['D1'] | safe }}</li>
+                            <li>{{ row['A1'] | safe }}</li><li>{{ row['B1'] | safe }}</li><li>{{ row['C1'] | safe }}</li><li>{{ row['D1'] | safe }}</li>
                         </ol>
-
                         {% if answer_key_format in ['Below Every Question', 'Both Places'] %}
                             <div class="inline-answer-box" style="color: {{ user_color }}; border-color: {{ user_color }};">
                                 CORRECT ANSWER: {{ row['ans'] }}
@@ -240,9 +238,7 @@
             </table>
         </div>
         {% endif %}
-
     </div>
     {% endfor %}
-
 </body>
 </html>
