@@ -77,17 +77,14 @@
 
         .chapter-title { text-align: center; font-size: 16pt; font-weight: bold; background-color: {{ user_color }}; color: #ffffff; padding: 10px 20px; border-radius: 8px; margin-bottom: 20px; margin-top: 0; }
 
-        /* Two-column layout via HTML table — fully controlled, no WeasyPrint column bugs */
-        .two-col-outer { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        .two-col-left  { width: 50%; vertical-align: top; padding-right: 5mm; border-right: 1px solid #E5E7EB; }
-        .two-col-right { width: 50%; vertical-align: top; padding-left: 5mm; }
+        .two-column-layout { column-count: 2; column-gap: 8mm; column-rule: 1px solid #E5E7EB; }
 
-        .question-block { break-inside: avoid; page-break-inside: avoid; margin-bottom: 10px; }
+        .question-block { break-inside: avoid; margin-bottom: 10px; }
         .question-block img { max-width: 100%; height: auto; display: block; margin: 5px 0; }
 
-        /* Question tables */
-        .question-block table { width: 100% !important; border-collapse: collapse; margin: 5px 0; table-layout: fixed; }
-        .question-block td, .question-block th { border: 1px solid #ccc; padding: 3px; text-align: center; font-size: 8.5pt; word-wrap: break-word; overflow: hidden; }
+        /* Question tables inside cells fix */
+        .question-block table { width: 100% !important; border-collapse: collapse; margin: 5px 0; }
+        .question-block td { border: 1px solid #ccc; padding: 3px; text-align: center; font-size: 0.9em; }
 
         .q-main-text { font-weight: bold; margin-bottom: 8px; }
         .q-main-text p { display: inline; margin: 0; }
@@ -194,62 +191,36 @@
             </table>
 
         {% else %}
-            {# Monolingual: HTML table layout — left_col filled first, then right_col #}
-            <table class="two-col-outer"><tr>
+            <div class="two-column-layout">
+                {% for row in chapter.rows %}
+                    {% set current_color = strip_colors[loop.index0 % 4] %}
 
-                <td class="two-col-left">
-                    {% for row in chapter.left_col %}
-                        {% set current_color = strip_colors[loop.index0 % 4] %}
-                        {% if question_style == 'Colorful Strip' %}
-                            <div class="question-block advance-style" style="border-left-color: {{ current_color }};">
-                        {% elif question_style == 'Grey Box' %}
-                            <div class="question-block grey-box-style">
-                        {% else %}
-                            <div class="question-block basic-style">
-                        {% endif %}
-                            <div class="q-main-text">{{ row['q_num'] }}. {{ row['q1'] | safe }}</div>
-                            <ol type="A">
-                                <li>{{ row['A1'] | safe }}</li>
-                                <li>{{ row['B1'] | safe }}</li>
-                                <li>{{ row['C1'] | safe }}</li>
-                                <li>{{ row['D1'] | safe }}</li>
-                            </ol>
-                            {% if answer_key_format in ['Below Every Question', 'Both Places'] %}
-                                <div class="inline-answer-box" style="color: {{ user_color }}; border-color: {{ user_color }};">
-                                    CORRECT ANSWER: {{ row['ans'] }}
-                                </div>
-                            {% endif %}
+                    {% if question_style == 'Colorful Strip' %}
+                        <div class="question-block advance-style" style="border-left-color: {{ current_color }};">
+                    {% elif question_style == 'Grey Box' %}
+                        <div class="question-block grey-box-style">
+                    {% else %}
+                        <div class="question-block basic-style">
+                    {% endif %}
+
+                        <div class="q-main-text">
+                            {{ row['q_num'] }}. {{ row['q1'] | safe }}
                         </div>
-                    {% endfor %}
-                </td>
+                        <ol type="A">
+                            <li>{{ row['A1'] | safe }}</li>
+                            <li>{{ row['B1'] | safe }}</li>
+                            <li>{{ row['C1'] | safe }}</li>
+                            <li>{{ row['D1'] | safe }}</li>
+                        </ol>
 
-                <td class="two-col-right">
-                    {% for row in chapter.right_col %}
-                        {% set current_color = strip_colors[loop.index0 % 4] %}
-                        {% if question_style == 'Colorful Strip' %}
-                            <div class="question-block advance-style" style="border-left-color: {{ current_color }};">
-                        {% elif question_style == 'Grey Box' %}
-                            <div class="question-block grey-box-style">
-                        {% else %}
-                            <div class="question-block basic-style">
+                        {% if answer_key_format in ['Below Every Question', 'Both Places'] %}
+                            <div class="inline-answer-box" style="color: {{ user_color }}; border-color: {{ user_color }};">
+                                CORRECT ANSWER: {{ row['ans'] }}
+                            </div>
                         {% endif %}
-                            <div class="q-main-text">{{ row['q_num'] }}. {{ row['q1'] | safe }}</div>
-                            <ol type="A">
-                                <li>{{ row['A1'] | safe }}</li>
-                                <li>{{ row['B1'] | safe }}</li>
-                                <li>{{ row['C1'] | safe }}</li>
-                                <li>{{ row['D1'] | safe }}</li>
-                            </ol>
-                            {% if answer_key_format in ['Below Every Question', 'Both Places'] %}
-                                <div class="inline-answer-box" style="color: {{ user_color }}; border-color: {{ user_color }};">
-                                    CORRECT ANSWER: {{ row['ans'] }}
-                                </div>
-                            {% endif %}
-                        </div>
-                    {% endfor %}
-                </td>
-
-            </tr></table>
+                    </div>
+                {% endfor %}
+            </div>
         {% endif %}
 
         {% if answer_key_format in ['End of Chapter', 'Both Places'] %}
