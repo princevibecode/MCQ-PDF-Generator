@@ -76,67 +76,51 @@ def process_data(file_data):
                     'ans': row.get("correct_answer", "")
                 })
                 
-        mid = (len(rows) + 1) // 2
         chapters.append({
             'name': str(chapter_name),
             'count': len(rows),
-            'rows': rows,
-            'left_col': rows[:mid],
-            'right_col': rows[mid:]
+            'rows': rows
         })
     return df, chapters, is_bilingual
 
 # --- AGGRESSIVE FIX: CLEANING + TABLE ALIGNMENT + NONE FIX ---
 def clean_html_content(text):
-    if not isinstance(text, str):
-        if text is None: return ""
+    if not isinstance(text, str): 
+        if text is None: return "None"
         text = str(text)
-
+    
     if text.strip().lower() in ["nan", ""]: return ""
-
+    
     # 1. Unlock HTML Entities
     text = html.unescape(text)
-
-    # 2. Strict Table Fix — use regex to REPLACE entire opening tag (removes conflicting attrs like border, cellpadding, cellspacing)
-    table_style = 'width:100%; border-collapse:collapse; margin:6px 0; table-layout:fixed; border:1px solid #ccc; font-size:8.5pt;'
-    text = re.sub(r'<table[^>]*>', f'<table style="{table_style}">', text)
-
-    # 3. Fix <td> — merge with any existing inline style, or inject fresh
-    td_base = 'border:1px solid #ccc; padding:3px; text-align:center; overflow:hidden; word-wrap:break-word;'
-    text = re.sub(
-        r'<td([^>]*)style="([^"]*)"([^>]*)>',
-        lambda m: f'<td{m.group(1)}style="{td_base} {m.group(2)}"{m.group(3)}>',
-        text
-    )
-    text = re.sub(r'<td(?![^>]*style=)([^>]*)>', rf'<td style="{td_base}"\1>', text)
-
-    # 4. Fix <th> — same pattern
-    th_base = 'border:1px solid #ccc; padding:3px; text-align:center; background:#f2f2f2; overflow:hidden; word-wrap:break-word;'
-    text = re.sub(
-        r'<th([^>]*)style="([^"]*)"([^>]*)>',
-        lambda m: f'<th{m.group(1)}style="{th_base} {m.group(2)}"{m.group(3)}>',
-        text
-    )
-    text = re.sub(r'<th(?![^>]*style=)([^>]*)>', rf'<th style="{th_base}"\1>', text)
-
-    # 5. Compact Breaks: Replace paragraphs with single breaks
+    
+    # 2. Strict Table Fix for Bilingual Alignment
+    # Fixed width, smaller font, and word-break to prevent column pushing
+    table_style = 'width:100%; border-collapse:collapse; margin:8px 0; table-layout: fixed; border: 1px solid #ccc;'
+    td_style = 'border:1px solid #ccc; padding:3px; text-align:center; font-size:8.5pt; overflow:hidden; word-wrap: break-word;'
+    
+    text = text.replace('<table', f'<table style="{table_style}"')
+    text = text.replace('<td', f'<td style="{td_style}"')
+    text = text.replace('<th', f'<th style="{td_style} background-color:#f2f2f2;"')
+    
+    # 3. Compact Breaks: Replace paragraphs with single breaks
     text = text.replace('<p>', '').replace('</p>', '<br>')
     text = text.replace('\n', '<br>')
-
-    # 6. Spacing Fix: Max 1 line break allowed between lines
+    
+    # 4. Spacing Fix: Max 1 line break allowed between lines
     text = re.sub(r'(<br\s*/?>\s*){2,}', '<br>', text)
-
-    # 7. Trim leading/trailing breaks
+    
+    # 5. Trim leading/trailing breaks
     text = text.strip()
     text = re.sub(r'^(<br\s*/?>\s*)+', '', text)
     text = re.sub(r'(<br\s*/?>\s*)+$', '', text)
-
-    # 8. Image & Maths handling
+    
+    # 6. Image & Maths handling
     text = text.replace('src="//', 'src="https://')
 
     def replace_math(match):
         encoded = urllib.parse.quote("\\Large " + match.group(1).strip())
-        return f'<img src="https://latex.codecogs.com/svg.image?{encoded}" style="vertical-align:middle; border:none; margin:0 2px;" />'
+        return f'<img src="https://latex.codecogs.com/svg.image?{encoded}" style="vertical-align: middle; border: none; margin: 0 2px;" />'
 
     return re.sub(r'\\\((.*?)\\\)', replace_math, text)
 
