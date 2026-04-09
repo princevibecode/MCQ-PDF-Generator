@@ -233,4 +233,4 @@ if uploaded_file is not None:
             st.subheader("👁️ Live Preview")
             b64 = base64.b64encode(pdf_bytes).decode('utf-8')
             display = f'<iframe src="data:application/pdf;base64,{b64}#toolbar=0" width="100%" height="800px"></iframe>'
-            st.markdown(display, unsafe_allow_html=Tru
+            st.markdown(display, unsafe_allow_html=True)
