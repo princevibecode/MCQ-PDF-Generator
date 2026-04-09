@@ -7,16 +7,16 @@
 
         @page {
             size: A4;
-            margin-left: 15mm;
-            margin-right: 15mm;
+            margin-left: 15mm; margin-right: 15mm;
             {% if promotion_tier == 'Without Promotions' %}
-                margin-top: 15mm;
-                margin-bottom: 15mm;
+                margin-top: 15mm; margin-bottom: 15mm;
             {% else %}
                 margin-top: {{ header_height + 40 }}px;
                 {% if 'Footer' in promo_layout %}
                     margin-bottom: {{ footer_height + 50 }}px;
                     @bottom-center { content: element(footerCenter); }
+                {% else %}
+                    margin-bottom: 15mm;
                 {% endif %}
                 @top-left { content: element(headerLeft); }
                 @top-right { content: element(headerRight); }
@@ -25,8 +25,7 @@
             @bottom-right {
                 content: counter(page);
                 font-family: 'Noto Serif', serif;
-                font-size: 10pt;
-                font-weight: bold;
+                font-size: 10pt; font-weight: bold;
                 padding-right: 5mm;
             }
         }
@@ -34,63 +33,72 @@
         body {
             font-family: 'Noto Serif', 'Noto Serif Devanagari', 'Noto Serif Bengali', Arial, sans-serif;
             font-size: {{ user_font_size }}pt;
-            line-height: 1.3;
-            margin: 0;
-            color: #111827;
+            line-height: 1.3; margin: 0; color: #111827;
         }
 
-        /* --- STRETCH ALIGNMENT & GAP FIX --- */
-        .bilingual-table {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed;
-        }
-        .bilingual-cell {
-            width: 50%;
-            vertical-align: top !important; /* Forces content to TOP */
-            padding-bottom: 15px;
-            border-right: 1px solid #E5E7EB;
-        }
+        /* ALIGNMENT FIXES */
+        .bilingual-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .bilingual-cell { width: 50%; vertical-align: top !important; padding-bottom: 15px; border-right: 1px solid #E5E7EB; }
+        
+        .two-column-layout { column-count: 2; column-gap: 8mm; column-rule: 1px solid #E5E7EB; }
 
-        .question-block {
-            margin: 0 !important;
-            padding: 5px 10px;
-        }
+        .question-block { break-inside: avoid; margin-bottom: 10px; padding: 5px; }
+        .question-block table { width: 100% !important; margin: 5px 0 !important; border-collapse: collapse !important; }
+        .question-block td { padding: 3px !important; border: 1px solid #ccc !important; font-size: 0.9em !important; }
 
-        /* Question tables inside cells fix */
-        .question-block table {
-            width: 100% !important;
-            margin: 2px 0 !important;
-            border-collapse: collapse !important;
-            table-layout: auto !important;
-        }
-        .question-block td {
-            padding: 3px !important;
-            border: 1px solid #ccc !important;
-            font-size: 0.9em !important;
-            vertical-align: middle !important;
-        }
+        .q-main-text { font-weight: bold; margin-bottom: 5px; }
+        ol { margin-top: 2px; padding-left: 20px; }
+        li { margin-bottom: 3px; }
 
-        .q-main-text { font-weight: bold; display: block; margin-bottom: 3px !important; }
-        .q-main-text br { display: none; } /* Prevents extra break after number */
+        .index-link { text-decoration: none; color: #111827; display: flex; font-weight: bold; margin-bottom: 15px; }
+        .index-leader { flex-grow: 1; border-bottom: 2px dotted #ccc; margin: 0 10px; position: relative; top: -6px; }
+        .index-link::after { content: target-counter(attr(href), page); }
 
-        .chapter-title { text-align: center; background-color: {{ user_color }}; color: #ffffff; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
+        .chapter-title { text-align: center; background-color: {{ user_color }}; color: #ffffff; padding: 10px; border-radius: 8px; margin-bottom: 20px; }
 
         .header-left-box { position: running(headerLeft); text-align: left; height: {{ header_height }}px; }
         .header-right-box { position: running(headerRight); text-align: right; height: {{ header_height }}px; }
         .footer-center-box { position: running(footerCenter); text-align: center; height: {{ footer_height }}px; }
+        .header-left-box img, .header-right-box img { max-height: 100%; max-width: {{ header_logo_width }}%; object-fit: contain; }
 
-        ol { margin: 2px 0 0 18px; }
-        li { margin-bottom: 2px; }
+        .advance-style { border-left: 5px solid {{ user_color }}; border-radius: 4px; border: 1px solid #eee; border-left-width: 5px; padding: 10px; }
+        .grey-box-style { background: #f3f4f6; padding: 10px; border-radius: 8px; }
+        
+        .inline-answer-box { background-color: #F9FAFB; border: 1px solid {{ user_color }}; color: {{ user_color }}; padding: 4px 8px; font-weight: bold; font-size: 9pt; display: inline-block; margin-top: 5px; }
 
-        .advance-style { border-left: 5px solid {{ user_color }}; background: #fff; border: 1px solid #eee; border-left-width: 5px; }
-        .grey-box-style { background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 5px; }
+        .answer-key-section { margin-top: 25px; break-inside: avoid; }
+        .answer-table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+        .answer-table td { border: 1px solid #E5E7EB; padding: 6px; text-align: center; }
     </style>
 </head>
 <body>
+    {% if promotion_tier == 'With Promotions' and watermark_b64 %}
+        <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate({{ watermark_angle }}deg); opacity: {{ watermark_opacity }}; z-index: -1; width: 70%; text-align: center;">
+            <img src="{{ watermark_b64 }}" style="max-width: 100%;">
+        </div>
+    {% endif %}
+
+    {% if promotion_tier == 'With Promotions' %}
+        {% if header_left_b64 %}<div class="header-left-box"><img src="{{ header_left_b64 }}"></div>{% endif %}
+        {% if header_right_b64 %}<div class="header-right-box"><img src="{{ header_right_b64 }}"></div>{% endif %}
+        {% if 'Footer' in promo_layout and footer_b64 %}<div class="footer-center-box"><img src="{{ footer_b64 }}"></div>{% endif %}
+    {% endif %}
+
+    <div style="break-after: page;">
+        <h1 style="text-align: center; color: {{ user_color }};">Table of Contents</h1>
+        {% for chapter in chapters %}
+            <a href="#chapter-{{ loop.index }}" class="index-link">
+                <span>{{ loop.index }}. {{ chapter.name }} ({{ chapter.count }} Qs)</span>
+                <span class="index-leader"></span>
+            </a>
+        {% endfor %}
+    </div>
+
     {% for chapter in chapters %}
     <div class="chapter-section" style="break-before: page;">
-        <h2 class="chapter-title">{{ chapter.name }}</h2>
+        <h2 id="chapter-{{ loop.index }}" class="chapter-title">{{ chapter.name }}</h2>
+
+        {% set strip_colors = ['#4A90E2', '#50E3C2', '#F5A623', '#48C9B0'] %}
 
         {% if is_bilingual %}
             <table class="bilingual-table">
@@ -98,25 +106,58 @@
                     <tr>
                         <td class="bilingual-cell">
                             <div class="question-block {{ question_style | lower | replace(' ', '-') }}-style">
-                                <span class="q-main-text">{{ row['q_num'] }}. {{ row['q1'] | safe }}</span>
+                                <div class="q-main-text">{{ row['q_num'] }}. {{ row['q1'] | safe }}</div>
                                 <ol type="A">
                                     <li>{{ row['A1'] | safe }}</li><li>{{ row['B1'] | safe }}</li><li>{{ row['C1'] | safe }}</li><li>{{ row['D1'] | safe }}</li>
                                 </ol>
+                                {% if answer_key_format in ['Below Every Question', 'Both Places'] %}
+                                    <div class="inline-answer-box">CORRECT ANSWER: {{ row['ans'] }}</div>
+                                {% endif %}
                             </div>
                         </td>
                         <td class="bilingual-cell" style="border-right: none; padding-left: 15px;">
                             <div class="question-block {{ question_style | lower | replace(' ', '-') }}-style">
-                                <span class="q-main-text">{{ row['q_num'] }}. {{ row['q2'] | safe }}</span>
+                                <div class="q-main-text">{{ row['q_num'] }}. {{ row['q2'] | safe }}</div>
                                 <ol type="A">
                                     <li>{{ row['A2'] | safe }}</li><li>{{ row['B2'] | safe }}</li><li>{{ row['C2'] | safe }}</li><li>{{ row['D2'] | safe }}</li>
                                 </ol>
+                                {% if answer_key_format in ['Below Every Question', 'Both Places'] %}
+                                    <div class="inline-answer-box">CORRECT ANSWER: {{ row['ans'] }}</div>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>
                 {% endfor %}
             </table>
         {% else %}
-            {% endif %}
+            <div class="two-column-layout">
+                {% for row in chapter.rows %}
+                    <div class="question-block {{ question_style | lower | replace(' ', '-') }}-style">
+                        <div class="q-main-text">{{ row['q_num'] }}. {{ row['q1'] | safe }}</div>
+                        <ol type="A">
+                            <li>{{ row['A1'] | safe }}</li><li>{{ row['B1'] | safe }}</li><li>{{ row['C1'] | safe }}</li><li>{{ row['D1'] | safe }}</li>
+                        </ol>
+                        {% if answer_key_format in ['Below Every Question', 'Both Places'] %}
+                            <div class="inline-answer-box">CORRECT ANSWER: {{ row['ans'] }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if answer_key_format in ['End of Chapter', 'Both Places'] %}
+        <div class="answer-key-section">
+            <h3 style="color: {{ user_color }};">Answer Key - {{ chapter.name }}</h3>
+            <table class="answer-table">
+                <tr>
+                {% for row in chapter.rows %}
+                    <td><strong>{{ row['q_num'] }}.</strong> ({{ row['ans'] }})</td>
+                    {% if loop.index % 5 == 0 and not loop.last %}</tr><tr>{% endif %}
+                {% endfor %}
+                </tr>
+            </table>
+        </div>
+        {% endif %}
     </div>
     {% endfor %}
 </body>
