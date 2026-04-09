@@ -83,7 +83,7 @@ def process_data(file_data):
         })
     return df, chapters, is_bilingual
 
-# --- AGGRESSIVE FIX: CLEANING + TABLE ALIGNMENT + NONE FIX ---
+# --- UPDATED: CLEANING + AGGRESSIVE TABLE ALIGNMENT + NONE FIX ---
 def clean_html_content(text):
     if not isinstance(text, str): 
         if text is None: return "None"
@@ -94,28 +94,35 @@ def clean_html_content(text):
     # 1. Unlock HTML Entities
     text = html.unescape(text)
     
-    # 2. Strict Table Fix for Bilingual Alignment
-    # Fixed width, smaller font, and word-break to prevent column pushing
-    table_style = 'width:100%; border-collapse:collapse; margin:8px 0; table-layout: fixed; border: 1px solid #ccc;'
-    td_style = 'border:1px solid #ccc; padding:3px; text-align:center; font-size:8.5pt; overflow:hidden; word-wrap: break-word;'
+    # 2. FIXED WIDTH KILLER: Convert any fixed pixel width to 100% 
+    # Taaki table container ke bahar na dhakka maare
+    text = re.sub(r'width\s*[:=]\s*["\']?\d+px["\']?', 'width: 100%', text)
+    text = re.sub(r'width\s*[:=]\s*["\']?\d+["\']?', 'width: 100%', text)
+
+    # 3. NESTED P-TAG REMOVER: Remove <p> tags inside <td> which add extra padding
+    text = re.sub(r'<td[^>]*>\s*<p[^>]*>(.*?)</p>\s*</td>', r'<td>\1</td>', text, flags=re.DOTALL | re.IGNORECASE)
+    
+    # 4. Strict Table Fix for Bilingual/Single Alignment
+    table_style = 'width:100% !important; border-collapse:collapse; margin:5px 0; table-layout: auto; border: 1px solid #ccc; font-size: 8.5pt;'
+    td_style = 'border:1px solid #ccc; padding:4px 6px; text-align:left; vertical-align: middle; word-wrap: break-word;'
     
     text = text.replace('<table', f'<table style="{table_style}"')
     text = text.replace('<td', f'<td style="{td_style}"')
     text = text.replace('<th', f'<th style="{td_style} background-color:#f2f2f2;"')
     
-    # 3. Compact Breaks: Replace paragraphs with single breaks
+    # 5. Compact Breaks: Replace paragraphs with single breaks and clean double gaps
     text = text.replace('<p>', '').replace('</p>', '<br>')
     text = text.replace('\n', '<br>')
     
-    # 4. Spacing Fix: Max 1 line break allowed between lines
+    # Collapse multiple line breaks into one strictly
     text = re.sub(r'(<br\s*/?>\s*){2,}', '<br>', text)
     
-    # 5. Trim leading/trailing breaks
+    # 6. Trim leading/trailing breaks
     text = text.strip()
     text = re.sub(r'^(<br\s*/?>\s*)+', '', text)
     text = re.sub(r'(<br\s*/?>\s*)+$', '', text)
     
-    # 6. Image & Maths handling
+    # 7. Image & Maths handling
     text = text.replace('src="//', 'src="https://')
 
     def replace_math(match):
@@ -129,7 +136,7 @@ def get_base64_image(uploaded_file):
         return f"data:{uploaded_file.type};base64,{base64.b64encode(uploaded_file.getvalue()).decode()}"
     return None
 
-# --- UI & RENDERING (NO CHANGES HERE) ---
+# --- UI & RENDERING ---
 with st.sidebar:
     st.header("⚙️ Promotion Setup")
     promo_tier = st.radio("Promotion Tier", ["Without Promotions", "With Promotions"])
