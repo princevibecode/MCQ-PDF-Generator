@@ -77,7 +77,9 @@
 
         .chapter-title { text-align: center; font-size: 16pt; font-weight: bold; background-color: {{ user_color }}; color: #ffffff; padding: 10px 20px; border-radius: 8px; margin-bottom: 20px; margin-top: 0; }
 
-        .two-column-layout { column-count: 2; column-gap: 8mm; column-rule: 1px solid #E5E7EB; }
+        .two-column-layout { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .two-col-left  { width: 50%; vertical-align: top; padding-right: 5mm; border-right: 1px solid #E5E7EB; }
+        .two-col-right { width: 50%; vertical-align: top; padding-left: 5mm; }
 
         .question-block { break-inside: avoid; margin-bottom: 10px; }
         .question-block img { max-width: 100%; height: auto; display: block; margin: 5px 0; }
@@ -191,10 +193,11 @@
             </table>
 
         {% else %}
-            <div class="two-column-layout">
-                {% for row in chapter.rows %}
-                    {% set current_color = strip_colors[loop.index0 % 4] %}
+            <table class="two-column-layout"><tr>
 
+                <td class="two-col-left">
+                {% for row in chapter.left_col %}
+                    {% set current_color = strip_colors[loop.index0 % 4] %}
                     {% if question_style == 'Colorful Strip' %}
                         <div class="question-block advance-style" style="border-left-color: {{ current_color }};">
                     {% elif question_style == 'Grey Box' %}
@@ -202,17 +205,13 @@
                     {% else %}
                         <div class="question-block basic-style">
                     {% endif %}
-
-                        <div class="q-main-text">
-                            {{ row['q_num'] }}. {{ row['q1'] | safe }}
-                        </div>
+                        <div class="q-main-text">{{ row['q_num'] }}. {{ row['q1'] | safe }}</div>
                         <ol type="A">
                             <li>{{ row['A1'] | safe }}</li>
                             <li>{{ row['B1'] | safe }}</li>
                             <li>{{ row['C1'] | safe }}</li>
                             <li>{{ row['D1'] | safe }}</li>
                         </ol>
-
                         {% if answer_key_format in ['Below Every Question', 'Both Places'] %}
                             <div class="inline-answer-box" style="color: {{ user_color }}; border-color: {{ user_color }};">
                                 CORRECT ANSWER: {{ row['ans'] }}
@@ -220,7 +219,35 @@
                         {% endif %}
                     </div>
                 {% endfor %}
-            </div>
+                </td>
+
+                <td class="two-col-right">
+                {% for row in chapter.right_col %}
+                    {% set current_color = strip_colors[loop.index0 % 4] %}
+                    {% if question_style == 'Colorful Strip' %}
+                        <div class="question-block advance-style" style="border-left-color: {{ current_color }};">
+                    {% elif question_style == 'Grey Box' %}
+                        <div class="question-block grey-box-style">
+                    {% else %}
+                        <div class="question-block basic-style">
+                    {% endif %}
+                        <div class="q-main-text">{{ row['q_num'] }}. {{ row['q1'] | safe }}</div>
+                        <ol type="A">
+                            <li>{{ row['A1'] | safe }}</li>
+                            <li>{{ row['B1'] | safe }}</li>
+                            <li>{{ row['C1'] | safe }}</li>
+                            <li>{{ row['D1'] | safe }}</li>
+                        </ol>
+                        {% if answer_key_format in ['Below Every Question', 'Both Places'] %}
+                            <div class="inline-answer-box" style="color: {{ user_color }}; border-color: {{ user_color }};">
+                                CORRECT ANSWER: {{ row['ans'] }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                </td>
+
+            </tr></table>
         {% endif %}
 
         {% if answer_key_format in ['End of Chapter', 'Both Places'] %}
