@@ -79,12 +79,12 @@
 
         .two-column-layout { column-count: 2; column-gap: 8mm; column-rule: 1px solid #E5E7EB; }
 
-        .question-block { break-inside: avoid; margin-bottom: 10px; }
+        .question-block { break-inside: avoid; page-break-inside: avoid; overflow: hidden; margin-bottom: 10px; }
         .question-block img { max-width: 100%; height: auto; display: block; margin: 5px 0; }
 
         /* Question tables inside cells fix */
-        .question-block table { width: 100% !important; border-collapse: collapse; margin: 5px 0; }
-        .question-block td { border: 1px solid #ccc; padding: 3px; text-align: center; font-size: 0.9em; }
+        .question-block table { width: 100% !important; border-collapse: collapse; margin: 5px 0; table-layout: fixed; break-inside: avoid; page-break-inside: avoid; }
+        .question-block td, .question-block th { border: 1px solid #ccc; padding: 3px; text-align: center; font-size: 8.5pt; word-wrap: break-word; overflow: hidden; }
 
         .q-main-text { font-weight: bold; margin-bottom: 8px; }
         .q-main-text p { display: inline; margin: 0; }
