@@ -82,9 +82,14 @@
         .question-block { break-inside: avoid; page-break-inside: avoid; overflow: hidden; margin-bottom: 10px; }
         .question-block img { max-width: 100%; height: auto; display: block; margin: 5px 0; }
 
+        /* Table questions: allow break-inside so they flow naturally in columns */
+        .question-block-has-table { break-inside: auto; page-break-inside: auto; margin-bottom: 10px; }
+        .question-block-has-table img { max-width: 100%; height: auto; display: block; margin: 5px 0; }
+
         /* Question tables inside cells fix */
-        .question-block table { width: 100% !important; border-collapse: collapse; margin: 5px 0; table-layout: fixed; break-inside: avoid; page-break-inside: avoid; }
-        .question-block td, .question-block th { border: 1px solid #ccc; padding: 3px; text-align: center; font-size: 8.5pt; word-wrap: break-word; overflow: hidden; }
+        .question-block table, .question-block-has-table table { width: 100% !important; border-collapse: collapse; margin: 5px 0; table-layout: fixed; }
+        .question-block td, .question-block th,
+        .question-block-has-table td, .question-block-has-table th { border: 1px solid #ccc; padding: 3px; text-align: center; font-size: 8.5pt; word-wrap: break-word; overflow: hidden; }
 
         .q-main-text { font-weight: bold; margin-bottom: 8px; }
         .q-main-text p { display: inline; margin: 0; }
@@ -194,13 +199,26 @@
             <div class="two-column-layout">
                 {% for row in chapter.rows %}
                     {% set current_color = strip_colors[loop.index0 % 4] %}
+                    {% set has_table = '<table' in row['q1'] %}
 
-                    {% if question_style == 'Colorful Strip' %}
-                        <div class="question-block advance-style" style="border-left-color: {{ current_color }};">
-                    {% elif question_style == 'Grey Box' %}
-                        <div class="question-block grey-box-style">
+                    {% if has_table %}
+                        {# Table question: allow break-inside so it stays in column flow #}
+                        {% if question_style == 'Colorful Strip' %}
+                            <div class="question-block-has-table advance-style" style="border-left-color: {{ current_color }};">
+                        {% elif question_style == 'Grey Box' %}
+                            <div class="question-block-has-table grey-box-style">
+                        {% else %}
+                            <div class="question-block-has-table basic-style">
+                        {% endif %}
                     {% else %}
-                        <div class="question-block basic-style">
+                        {# Normal question: stays in two-column flow #}
+                        {% if question_style == 'Colorful Strip' %}
+                            <div class="question-block advance-style" style="border-left-color: {{ current_color }};">
+                        {% elif question_style == 'Grey Box' %}
+                            <div class="question-block grey-box-style">
+                        {% else %}
+                            <div class="question-block basic-style">
+                        {% endif %}
                     {% endif %}
 
                         <div class="q-main-text">
