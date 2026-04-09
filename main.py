@@ -76,10 +76,24 @@ def process_data(file_data):
                     'ans': row.get("correct_answer", "")
                 })
                 
+        mid = (len(rows) + 1) // 2  # fallback: count-based
+        # Smart split: table questions count as 2x height
+        weights = [2 if '<table' in r.get('q1', '') else 1 for r in rows]
+        total_w = sum(weights)
+        cumulative = 0
+        mid = len(rows)
+        for i, w in enumerate(weights):
+            cumulative += w
+            if cumulative >= total_w / 2:
+                mid = i + 1
+                break
+
         chapters.append({
             'name': str(chapter_name),
             'count': len(rows),
-            'rows': rows
+            'rows': rows,
+            'left_col': rows[:mid],
+            'right_col': rows[mid:]
         })
     return df, chapters, is_bilingual
 
