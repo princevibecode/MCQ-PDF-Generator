@@ -82,9 +82,10 @@
         .question-block { break-inside: avoid; margin-bottom: 10px; }
         .question-block img { max-width: 100%; height: auto; display: block; margin: 5px 0; }
 
-        /* Question tables inside cells fix */
-        .question-block table { width: 100% !important; border-collapse: collapse; margin: 5px 0; }
-        .question-block td { border: 1px solid #ccc; padding: 3px; text-align: center; font-size: 0.9em; }
+        /* Question tables inside cells fix - CSS only, no inline style injection */
+        .question-block table { max-width: 100%; border-collapse: collapse; margin: 5px 0; table-layout: auto; }
+        .question-block table td, .question-block table th { border: 1px solid #ccc; padding: 3px; text-align: center; font-size: 0.9em; word-wrap: break-word; }
+        .question-block table th { background-color: #f2f2f2; }
 
         .q-main-text { font-weight: bold; margin-bottom: 8px; }
         .q-main-text p { display: inline; margin: 0; }
