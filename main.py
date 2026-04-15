@@ -94,15 +94,6 @@ def clean_html_content(text):
     # 1. Unlock HTML Entities
     text = html.unescape(text)
     
-    # 2. Strict Table Fix for Bilingual Alignment
-    # Fixed width, smaller font, and word-break to prevent column pushing
-    table_style = 'width:100%; border-collapse:collapse; margin:8px 0; table-layout: fixed; border: 1px solid #ccc;'
-    td_style = 'border:1px solid #ccc; padding:3px; text-align:center; font-size:8.5pt; overflow:hidden; word-wrap: break-word;'
-    
-    text = text.replace('<table', f'<table style="{table_style}"')
-    text = text.replace('<td', f'<td style="{td_style}"')
-    text = text.replace('<th', f'<th style="{td_style} background-color:#f2f2f2;"')
-    
     # 3. Compact Breaks: Replace paragraphs with single breaks
     text = text.replace('<p>', '').replace('</p>', '<br>')
     text = text.replace('\n', '<br>')
