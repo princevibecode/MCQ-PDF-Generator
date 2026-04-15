@@ -220,7 +220,9 @@
                             {% endif %}
                                 <div class="q-main-text">{{ row['q_num'] }}. {{ row['q1'] | safe }}</div>
                                 {% set a1_is_img = '<img' in row['A1'] or '<img' in row['B1'] or '<img' in row['C1'] or '<img' in row['D1'] %}
-                                <div class="options-grid {{ 'img-grid' if a1_is_img else 'two-col' }}">
+                                {% set a1_max_words = [row['A1'].split()|length, row['B1'].split()|length, row['C1'].split()|length, row['D1'].split()|length] | max %}
+                                {% set a1_grid = 'img-grid' if a1_is_img else ('one-col' if a1_max_words > 6 else 'two-col') %}
+                                <div class="options-grid {{ a1_grid }}">
                                     <div class="option-item"><span class="option-label">A.</span><span class="option-text">{{ row['A1'] | safe }}</span></div>
                                     <div class="option-item"><span class="option-label">B.</span><span class="option-text">{{ row['B1'] | safe }}</span></div>
                                     <div class="option-item"><span class="option-label">C.</span><span class="option-text">{{ row['C1'] | safe }}</span></div>
@@ -245,7 +247,9 @@
                             {% endif %}
                                 <div class="q-main-text">{{ row['q_num'] }}. {{ row['q2'] | safe }}</div>
                                 {% set a2_is_img = '<img' in row['A2'] or '<img' in row['B2'] or '<img' in row['C2'] or '<img' in row['D2'] %}
-                                <div class="options-grid {{ 'img-grid' if a2_is_img else 'two-col' }}">
+                                {% set a2_max_words = [row['A2'].split()|length, row['B2'].split()|length, row['C2'].split()|length, row['D2'].split()|length] | max %}
+                                {% set a2_grid = 'img-grid' if a2_is_img else ('one-col' if a2_max_words > 6 else 'two-col') %}
+                                <div class="options-grid {{ a2_grid }}">
                                     <div class="option-item"><span class="option-label">A.</span><span class="option-text">{{ row['A2'] | safe }}</span></div>
                                     <div class="option-item"><span class="option-label">B.</span><span class="option-text">{{ row['B2'] | safe }}</span></div>
                                     <div class="option-item"><span class="option-label">C.</span><span class="option-text">{{ row['C2'] | safe }}</span></div>
@@ -281,7 +285,9 @@
                             {{ row['q_num'] }}. {{ row['q1'] | safe }}
                         </div>
                         {% set a1_is_img = '<img' in row['A1'] or '<img' in row['B1'] or '<img' in row['C1'] or '<img' in row['D1'] %}
-                        <div class="options-grid {{ 'img-grid' if a1_is_img else 'two-col' }}">
+                        {% set a1_max_words = [row['A1'].split()|length, row['B1'].split()|length, row['C1'].split()|length, row['D1'].split()|length] | max %}
+                        {% set a1_grid = 'img-grid' if a1_is_img else ('one-col' if a1_max_words > 6 else 'two-col') %}
+                        <div class="options-grid {{ a1_grid }}">
                             <div class="option-item"><span class="option-label">A.</span><span class="option-text">{{ row['A1'] | safe }}</span></div>
                             <div class="option-item"><span class="option-label">B.</span><span class="option-text">{{ row['B1'] | safe }}</span></div>
                             <div class="option-item"><span class="option-label">C.</span><span class="option-text">{{ row['C1'] | safe }}</span></div>
