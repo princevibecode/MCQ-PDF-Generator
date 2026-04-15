@@ -89,8 +89,50 @@
         .q-main-text { font-weight: bold; margin-bottom: 8px; }
         .q-main-text p { display: inline; margin: 0; }
 
-        ol { margin-top: 4px; margin-bottom: 0; padding-left: 20px; font-weight: normal; }
-        li { margin-bottom: 4px; }
+        /* --- OPTIONS LAYOUT --- */
+        .options-grid {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 4px;
+            margin-bottom: 0;
+            font-weight: normal;
+            gap: 2px 0;
+        }
+        .option-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 4px;
+            box-sizing: border-box;
+            padding: 2px 4px 2px 0;
+            min-width: 0;
+        }
+        .option-label {
+            font-weight: bold;
+            flex-shrink: 0;
+            min-width: 18px;
+        }
+        .option-text {
+            flex: 1;
+            min-width: 0;
+            word-break: break-word;
+        }
+
+        /* Two-column: each option takes 50% */
+        .options-grid.two-col .option-item {
+            width: 50%;
+        }
+        /* Single column: each option takes 100% */
+        .options-grid.one-col .option-item {
+            width: 100%;
+        }
+        /* Image grid: always 2x2 */
+        .options-grid.img-grid .option-item {
+            width: 50%;
+        }
+        .options-grid.img-grid .option-item img {
+            max-width: 100%;
+            height: auto;
+        }
 
         .basic-style { padding: 5px 0; background: transparent; border: none; }
         .advance-style { background-color: #FFFFFF; border: 1px solid #E5E7EB; border-left-width: 5px; border-left-style: solid; border-radius: 6px; padding: 12px; margin-bottom: 10px; }
@@ -103,6 +145,30 @@
         .answer-table { width: 100%; border-collapse: collapse; font-size: 9pt; }
         .answer-table td { border: 1px solid #E5E7EB; padding: 6px 4px; text-align: center; }
     </style>
+    <script>
+        // Smart options layout: try 2-col, fall back to 1-col if any option wraps
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.options-grid.two-col').forEach(function (grid) {
+                var items = grid.querySelectorAll('.option-item');
+                var wraps = false;
+                items.forEach(function (item) {
+                    var label = item.querySelector('.option-label');
+                    var text  = item.querySelector('.option-text');
+                    if (text && label) {
+                        // If the option-text itself scrolls (content taller than 1 line)
+                        // we consider it wrapped — compare scrollHeight vs offsetHeight
+                        if (text.scrollHeight > text.offsetHeight + 4) {
+                            wraps = true;
+                        }
+                    }
+                });
+                if (wraps) {
+                    grid.classList.remove('two-col');
+                    grid.classList.add('one-col');
+                }
+            });
+        });
+    </script>
 </head>
 <body>
 
@@ -153,9 +219,13 @@
                                 <div class="question-block basic-style">
                             {% endif %}
                                 <div class="q-main-text">{{ row['q_num'] }}. {{ row['q1'] | safe }}</div>
-                                <ol type="A">
-                                    <li>{{ row['A1'] | safe }}</li><li>{{ row['B1'] | safe }}</li><li>{{ row['C1'] | safe }}</li><li>{{ row['D1'] | safe }}</li>
-                                </ol>
+                                {% set a1_is_img = '<img' in row['A1'] or '<img' in row['B1'] or '<img' in row['C1'] or '<img' in row['D1'] %}
+                                <div class="options-grid {{ 'img-grid' if a1_is_img else 'two-col' }}">
+                                    <div class="option-item"><span class="option-label">A.</span><span class="option-text">{{ row['A1'] | safe }}</span></div>
+                                    <div class="option-item"><span class="option-label">B.</span><span class="option-text">{{ row['B1'] | safe }}</span></div>
+                                    <div class="option-item"><span class="option-label">C.</span><span class="option-text">{{ row['C1'] | safe }}</span></div>
+                                    <div class="option-item"><span class="option-label">D.</span><span class="option-text">{{ row['D1'] | safe }}</span></div>
+                                </div>
 
                                 {% if answer_key_format in ['Below Every Question', 'Both Places'] %}
                                     <div class="inline-answer-box" style="color: {{ user_color }}; border-color: {{ user_color }};">
@@ -174,9 +244,13 @@
                                 <div class="question-block basic-style">
                             {% endif %}
                                 <div class="q-main-text">{{ row['q_num'] }}. {{ row['q2'] | safe }}</div>
-                                <ol type="A">
-                                    <li>{{ row['A2'] | safe }}</li><li>{{ row['B2'] | safe }}</li><li>{{ row['C2'] | safe }}</li><li>{{ row['D2'] | safe }}</li>
-                                </ol>
+                                {% set a2_is_img = '<img' in row['A2'] or '<img' in row['B2'] or '<img' in row['C2'] or '<img' in row['D2'] %}
+                                <div class="options-grid {{ 'img-grid' if a2_is_img else 'two-col' }}">
+                                    <div class="option-item"><span class="option-label">A.</span><span class="option-text">{{ row['A2'] | safe }}</span></div>
+                                    <div class="option-item"><span class="option-label">B.</span><span class="option-text">{{ row['B2'] | safe }}</span></div>
+                                    <div class="option-item"><span class="option-label">C.</span><span class="option-text">{{ row['C2'] | safe }}</span></div>
+                                    <div class="option-item"><span class="option-label">D.</span><span class="option-text">{{ row['D2'] | safe }}</span></div>
+                                </div>
 
                                 {% if answer_key_format in ['Below Every Question', 'Both Places'] %}
                                     <div class="inline-answer-box" style="color: {{ user_color }}; border-color: {{ user_color }};">
@@ -206,12 +280,13 @@
                         <div class="q-main-text">
                             {{ row['q_num'] }}. {{ row['q1'] | safe }}
                         </div>
-                        <ol type="A">
-                            <li>{{ row['A1'] | safe }}</li>
-                            <li>{{ row['B1'] | safe }}</li>
-                            <li>{{ row['C1'] | safe }}</li>
-                            <li>{{ row['D1'] | safe }}</li>
-                        </ol>
+                        {% set a1_is_img = '<img' in row['A1'] or '<img' in row['B1'] or '<img' in row['C1'] or '<img' in row['D1'] %}
+                        <div class="options-grid {{ 'img-grid' if a1_is_img else 'two-col' }}">
+                            <div class="option-item"><span class="option-label">A.</span><span class="option-text">{{ row['A1'] | safe }}</span></div>
+                            <div class="option-item"><span class="option-label">B.</span><span class="option-text">{{ row['B1'] | safe }}</span></div>
+                            <div class="option-item"><span class="option-label">C.</span><span class="option-text">{{ row['C1'] | safe }}</span></div>
+                            <div class="option-item"><span class="option-label">D.</span><span class="option-text">{{ row['D1'] | safe }}</span></div>
+                        </div>
 
                         {% if answer_key_format in ['Below Every Question', 'Both Places'] %}
                             <div class="inline-answer-box" style="color: {{ user_color }}; border-color: {{ user_color }};">
