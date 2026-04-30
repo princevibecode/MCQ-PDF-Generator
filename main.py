@@ -28,6 +28,12 @@ def process_data(file_data):
                 
     is_bilingual = len(prefixes) >= 2
     
+    # Detect 5-option mode: check for option_E column (single) or prefix_option_E (bilingual)
+    if is_bilingual and len(prefixes) >= 1:
+        has_five_options = f"{prefixes[0]}_option_E" in df.columns
+    else:
+        has_five_options = "option_E" in df.columns
+    
     # Ensuring every cell is treated as a string to prevent "None" or numbers from breaking
     cols_to_clean = [col for col in df.columns if 'question_text' in col or 'option_' in col]
     for col in cols_to_clean:
@@ -54,7 +60,7 @@ def process_data(file_data):
                 qt1 = str(row[f"{p1}_question_text"]) + (f" &nbsp;<span style='color:#2563EB; font-size:0.9em;'><b>[{tag1}]</b></span>" if str(tag1).strip() else "")
                 qt2 = str(row[f"{p2}_question_text"]) + (f" &nbsp;<span style='color:#2563EB; font-size:0.9em;'><b>[{tag2}]</b></span>" if str(tag2).strip() else "")
                 
-                rows.append({
+                row_data = {
                     'q_num': row.get(f"{p1}_question_number", row.get("question_number", "")),
                     'q1': qt1, 
                     'A1': str(row.get(f"{p1}_option_A", "")), 'B1': str(row.get(f"{p1}_option_B", "")), 
@@ -63,25 +69,32 @@ def process_data(file_data):
                     'A2': str(row.get(f"{p2}_option_A", "")), 'B2': str(row.get(f"{p2}_option_B", "")), 
                     'C2': str(row.get(f"{p2}_option_C", "")), 'D2': str(row.get(f"{p2}_option_D", "")),
                     'ans': row.get(f"{p1}_correct_answer", row.get("correct_answer", ""))
-                })
+                }
+                if has_five_options:
+                    row_data['E1'] = str(row.get(f"{p1}_option_E", ""))
+                    row_data['E2'] = str(row.get(f"{p2}_option_E", ""))
+                rows.append(row_data)
             else:
                 tag = row.get("exam_tag", "")
                 qt = str(row.get("question_text", "")) + (f" &nbsp;<span style='color:#2563EB; font-size:0.9em;'><b>[{tag}]</b></span>" if str(tag).strip() else "")
                 
-                rows.append({
+                row_data = {
                     'q_num': row.get("question_number", ""),
                     'q1': qt, 
                     'A1': str(row.get("option_A", "")), 'B1': str(row.get("option_B", "")), 
                     'C1': str(row.get("option_C", "")), 'D1': str(row.get("option_D", "")),
                     'ans': row.get("correct_answer", "")
-                })
+                }
+                if has_five_options:
+                    row_data['E1'] = str(row.get("option_E", ""))
+                rows.append(row_data)
                 
         chapters.append({
             'name': str(chapter_name),
             'count': len(rows),
             'rows': rows
         })
-    return df, chapters, is_bilingual
+    return df, chapters, is_bilingual, has_five_options
 
 # --- AGGRESSIVE FIX: CLEANING + TABLE ALIGNMENT + NONE FIX ---
 def clean_html_content(text):
@@ -182,7 +195,7 @@ with st.sidebar:
 uploaded_file = st.file_uploader("Upload your Questions CSV", type=["csv"])
 
 if uploaded_file is not None:
-    df, chapters_data, is_bilingual = process_data(uploaded_file)
+    df, chapters_data, is_bilingual, has_five_options = process_data(uploaded_file)
     col1, col2 = st.columns([1, 1], gap="large")
 
     with col1:
@@ -192,7 +205,7 @@ if uploaded_file is not None:
             env = Environment(loader=FileSystemLoader('.'))
             template = env.get_template('template.html')
             html_out = template.render(
-                chapters=chapters_data, is_bilingual=is_bilingual, 
+                chapters=chapters_data, is_bilingual=is_bilingual, has_five_options=has_five_options,
                 promotion_tier=promo_tier, promo_layout=promo_layout,
                 question_style=question_style, answer_key_format=answer_key_format,
                 user_font_size=selected_font_size, user_color=selected_color,
