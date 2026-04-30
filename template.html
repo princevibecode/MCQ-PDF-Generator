@@ -233,7 +233,7 @@
                                 {% if a1_is_img %}
                                     {% set a1_grid = 'img-grid' %}
                                 {% elif has_five_options %}
-                                    {% set a1_grid = 'five-opt' if a1_max_words <= 6 else 'one-col' %}
+                                    {% set a1_grid = 'one-col' %}
                                 {% else %}
                                     {% set a1_grid = 'one-col' if a1_max_words > 6 else 'two-col' %}
                                 {% endif %}
@@ -269,7 +269,7 @@
                                 {% if a2_is_img %}
                                     {% set a2_grid = 'img-grid' %}
                                 {% elif has_five_options %}
-                                    {% set a2_grid = 'five-opt' if a2_max_words <= 6 else 'one-col' %}
+                                    {% set a2_grid = 'one-col' %}
                                 {% else %}
                                     {% set a2_grid = 'one-col' if a2_max_words > 6 else 'two-col' %}
                                 {% endif %}
@@ -316,7 +316,7 @@
                         {% if a1_is_img %}
                             {% set a1_grid = 'img-grid' %}
                         {% elif has_five_options %}
-                            {% set a1_grid = 'five-opt' if a1_max_words <= 6 else 'one-col' %}
+                            {% set a1_grid = 'one-col' %}
                         {% else %}
                             {% set a1_grid = 'one-col' if a1_max_words > 6 else 'two-col' %}
                         {% endif %}
