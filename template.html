@@ -126,6 +126,14 @@
         .options-grid.one-col .option-item {
             width: 100%;
         }
+        /* Five-option layout: first row 3 items (33%), second row 2 items centered (50%) */
+        .options-grid.five-opt .option-item {
+            width: 33.33%;
+        }
+        .options-grid.five-opt .option-item:nth-child(4),
+        .options-grid.five-opt .option-item:nth-child(5) {
+            width: 50%;
+        }
         /* Image grid: always 2x2 */
         .options-grid.img-grid .option-item {
             width: 50%;
@@ -222,12 +230,21 @@
                                 <div class="q-main-text">{{ row['q_num'] }}. {{ row['q1'] | safe }}</div>
                                 {% set a1_is_img = '<img' in row['A1'] or '<img' in row['B1'] or '<img' in row['C1'] or '<img' in row['D1'] %}
                                 {% set a1_max_words = [row['A1'].split()|length, row['B1'].split()|length, row['C1'].split()|length, row['D1'].split()|length] | max %}
-                                {% set a1_grid = 'img-grid' if a1_is_img else ('one-col' if a1_max_words > 6 else 'two-col') %}
+                                {% if a1_is_img %}
+                                    {% set a1_grid = 'img-grid' %}
+                                {% elif has_five_options %}
+                                    {% set a1_grid = 'five-opt' if a1_max_words <= 6 else 'one-col' %}
+                                {% else %}
+                                    {% set a1_grid = 'one-col' if a1_max_words > 6 else 'two-col' %}
+                                {% endif %}
                                 <div class="options-grid {{ a1_grid }}">
                                     <div class="option-item"><span class="option-label">A.</span><span class="option-text">{{ row['A1'] | safe }}</span></div>
                                     <div class="option-item"><span class="option-label">B.</span><span class="option-text">{{ row['B1'] | safe }}</span></div>
                                     <div class="option-item"><span class="option-label">C.</span><span class="option-text">{{ row['C1'] | safe }}</span></div>
                                     <div class="option-item"><span class="option-label">D.</span><span class="option-text">{{ row['D1'] | safe }}</span></div>
+                                    {% if has_five_options and row.get('E1', '') %}
+                                        <div class="option-item"><span class="option-label">E.</span><span class="option-text">{{ row['E1'] | safe }}</span></div>
+                                    {% endif %}
                                 </div>
 
                                 {% if answer_key_format in ['Below Every Question', 'Both Places'] %}
@@ -249,12 +266,21 @@
                                 <div class="q-main-text">{{ row['q_num'] }}. {{ row['q2'] | safe }}</div>
                                 {% set a2_is_img = '<img' in row['A2'] or '<img' in row['B2'] or '<img' in row['C2'] or '<img' in row['D2'] %}
                                 {% set a2_max_words = [row['A2'].split()|length, row['B2'].split()|length, row['C2'].split()|length, row['D2'].split()|length] | max %}
-                                {% set a2_grid = 'img-grid' if a2_is_img else ('one-col' if a2_max_words > 6 else 'two-col') %}
+                                {% if a2_is_img %}
+                                    {% set a2_grid = 'img-grid' %}
+                                {% elif has_five_options %}
+                                    {% set a2_grid = 'five-opt' if a2_max_words <= 6 else 'one-col' %}
+                                {% else %}
+                                    {% set a2_grid = 'one-col' if a2_max_words > 6 else 'two-col' %}
+                                {% endif %}
                                 <div class="options-grid {{ a2_grid }}">
                                     <div class="option-item"><span class="option-label">A.</span><span class="option-text">{{ row['A2'] | safe }}</span></div>
                                     <div class="option-item"><span class="option-label">B.</span><span class="option-text">{{ row['B2'] | safe }}</span></div>
                                     <div class="option-item"><span class="option-label">C.</span><span class="option-text">{{ row['C2'] | safe }}</span></div>
                                     <div class="option-item"><span class="option-label">D.</span><span class="option-text">{{ row['D2'] | safe }}</span></div>
+                                    {% if has_five_options and row.get('E2', '') %}
+                                        <div class="option-item"><span class="option-label">E.</span><span class="option-text">{{ row['E2'] | safe }}</span></div>
+                                    {% endif %}
                                 </div>
 
                                 {% if answer_key_format in ['Below Every Question', 'Both Places'] %}
@@ -287,12 +313,21 @@
                         </div>
                         {% set a1_is_img = '<img' in row['A1'] or '<img' in row['B1'] or '<img' in row['C1'] or '<img' in row['D1'] %}
                         {% set a1_max_words = [row['A1'].split()|length, row['B1'].split()|length, row['C1'].split()|length, row['D1'].split()|length] | max %}
-                        {% set a1_grid = 'img-grid' if a1_is_img else ('one-col' if a1_max_words > 6 else 'two-col') %}
+                        {% if a1_is_img %}
+                            {% set a1_grid = 'img-grid' %}
+                        {% elif has_five_options %}
+                            {% set a1_grid = 'five-opt' if a1_max_words <= 6 else 'one-col' %}
+                        {% else %}
+                            {% set a1_grid = 'one-col' if a1_max_words > 6 else 'two-col' %}
+                        {% endif %}
                         <div class="options-grid {{ a1_grid }}">
                             <div class="option-item"><span class="option-label">A.</span><span class="option-text">{{ row['A1'] | safe }}</span></div>
                             <div class="option-item"><span class="option-label">B.</span><span class="option-text">{{ row['B1'] | safe }}</span></div>
                             <div class="option-item"><span class="option-label">C.</span><span class="option-text">{{ row['C1'] | safe }}</span></div>
                             <div class="option-item"><span class="option-label">D.</span><span class="option-text">{{ row['D1'] | safe }}</span></div>
+                            {% if has_five_options and row.get('E1', '') %}
+                                <div class="option-item"><span class="option-label">E.</span><span class="option-text">{{ row['E1'] | safe }}</span></div>
+                            {% endif %}
                         </div>
 
                         {% if answer_key_format in ['Below Every Question', 'Both Places'] %}
