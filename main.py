@@ -98,28 +98,45 @@ def process_data(file_data):
 
 # --- AGGRESSIVE FIX: CLEANING + TABLE ALIGNMENT + NONE FIX ---
 def clean_html_content(text):
-    if not isinstance(text, str): 
-        if text is None: return "None"
+    if not isinstance(text, str):
+        if text is None:
+            return ""
         text = str(text)
-    
-    if text.strip().lower() in ["nan", ""]: return ""
-    
-    # 1. Unlock HTML Entities
+
+    if text.strip().lower() in ["nan", ""]:
+        return ""
+
+    # 1. Unlock HTML entities
     text = html.unescape(text)
-    
-    # 3. Compact Breaks: Replace paragraphs with single breaks
-    text = text.replace('<p>', '').replace('</p>', '<br>')
+
+    # 2. Normalize line endings
+    text = text.replace('\r\n', '\n').replace('\r', '\n')
+
+    # 3. Compact paragraphs into controlled breaks
+    text = re.sub(r'<p[^>]*>', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'</p>', '<br>', text, flags=re.IGNORECASE)
+
+    # 4. Table spacing fix:
+    # Remove whitespace/newlines between HTML tags before converting plain-text
+    # newlines to <br>. This prevents invalid <br> tags inside table markup.
+    text = re.sub(r'>\s+<', '><', text)
+
+    # 5. Convert only remaining plain-text newlines to breaks
     text = text.replace('\n', '<br>')
-    
-    # 4. Spacing Fix: Max 1 line break allowed between lines
-    text = re.sub(r'(<br\s*/?>\s*){2,}', '<br>', text)
-    
-    # 5. Trim leading/trailing breaks
+
+    # 6. Max 1 line break allowed between lines
+    text = re.sub(r'(<br\s*/?>\s*){2,}', '<br>', text, flags=re.IGNORECASE)
+
+    # 7. Remove breaks directly before/after tables
+    text = re.sub(r'(<br\s*/?>\s*)+(?=<table)', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'(</table>)(\s*<br\s*/?>)+', r'\1', text, flags=re.IGNORECASE)
+
+    # 8. Trim leading/trailing breaks
     text = text.strip()
-    text = re.sub(r'^(<br\s*/?>\s*)+', '', text)
-    text = re.sub(r'(<br\s*/?>\s*)+$', '', text)
-    
-    # 6. Image & Maths handling
+    text = re.sub(r'^(<br\s*/?>\s*)+', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'(<br\s*/?>\s*)+$', '', text, flags=re.IGNORECASE)
+
+    # 9. Image & maths handling
     text = text.replace('src="//', 'src="https://')
 
     def replace_math(match):
