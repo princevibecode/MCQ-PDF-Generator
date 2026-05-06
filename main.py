@@ -136,7 +136,7 @@ def clean_html_content(text):
         return (
             f'<img src="https://latex.codecogs.com/svg.image?{encoded}" '
             f'style="vertical-align: -0.15em; border: none; margin: 0 1px; '
-            f'height: 1.05em; width: auto; display: inline;" />'
+            f'height: 1em; width: auto; display: inline;" />'
         )
 
     return re.sub(r'\\\((.*?)\\\)', replace_math, text)
