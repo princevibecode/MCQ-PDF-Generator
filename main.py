@@ -12,6 +12,13 @@ from pypdf import PdfWriter, PdfReader
 st.set_page_config(page_title="Test Paper Generator", layout="wide")
 st.title("📄 Dynamic Test Paper Generator")
 
+if "pdf_bytes" not in st.session_state:
+    st.session_state.pdf_bytes = None
+
+if "uploaded_file_name" not in st.session_state:
+    st.session_state.uploaded_file_name = None
+
+
 @st.cache_data
 def process_data(file_data):
     df = pd.read_csv(file_data)
@@ -102,6 +109,7 @@ def process_data(file_data):
 
     return df, chapters, is_bilingual, has_five_options
 
+
 def clean_html_content(text):
     if not isinstance(text, str):
         if text is None:
@@ -141,10 +149,85 @@ def clean_html_content(text):
 
     return re.sub(r'\\\((.*?)\\\)', replace_math, text)
 
+
 def get_base64_image(uploaded_file):
     if uploaded_file is not None:
         return f"data:{uploaded_file.type};base64,{base64.b64encode(uploaded_file.getvalue()).decode()}"
     return None
+
+
+def build_pdf(
+    chapters_data,
+    is_bilingual,
+    has_five_options,
+    promo_tier,
+    promo_layout,
+    question_style,
+    answer_key_format,
+    selected_font_size,
+    selected_color,
+    header_left_b64,
+    header_left_link,
+    header_right_b64,
+    header_right_link,
+    header_height,
+    header_logo_width,
+    footer_b64,
+    footer_link,
+    footer_height,
+    watermark_b64,
+    watermark_opacity,
+    watermark_angle,
+    front_page_pdf,
+    last_page_pdf
+):
+    env = Environment(loader=FileSystemLoader('.'))
+    template = env.get_template('template.html')
+
+    html_out = template.render(
+        chapters=chapters_data,
+        is_bilingual=is_bilingual,
+        has_five_options=has_five_options,
+        promotion_tier=promo_tier,
+        promo_layout=promo_layout,
+        question_style=question_style,
+        answer_key_format=answer_key_format,
+        user_font_size=selected_font_size,
+        user_color=selected_color,
+        header_left_b64=header_left_b64,
+        header_left_link=header_left_link,
+        header_right_b64=header_right_b64,
+        header_right_link=header_right_link,
+        header_height=header_height,
+        header_logo_width=header_logo_width,
+        footer_b64=footer_b64,
+        footer_link=footer_link,
+        footer_height=footer_height,
+        watermark_b64=watermark_b64,
+        watermark_opacity=watermark_opacity,
+        watermark_angle=watermark_angle
+    )
+
+    pdf_bytes = HTML(string=html_out).write_pdf()
+
+    if front_page_pdf or last_page_pdf:
+        merger = PdfWriter()
+
+        if front_page_pdf:
+            merger.append(PdfReader(front_page_pdf))
+
+        merger.append(PdfReader(io.BytesIO(pdf_bytes)))
+
+        if last_page_pdf:
+            merger.append(PdfReader(last_page_pdf))
+
+        out = io.BytesIO()
+        merger.write(out)
+        pdf_bytes = out.getvalue()
+        merger.close()
+
+    return pdf_bytes
+
 
 with st.sidebar:
     st.header("⚙️ Promotion Setup")
@@ -209,6 +292,10 @@ with st.sidebar:
 uploaded_file = st.file_uploader("Upload your Questions CSV", type=["csv"])
 
 if uploaded_file is not None:
+    if st.session_state.uploaded_file_name != uploaded_file.name:
+        st.session_state.uploaded_file_name = uploaded_file.name
+        st.session_state.pdf_bytes = None
+
     df, chapters_data, is_bilingual, has_five_options = process_data(uploaded_file)
     col1, col2 = st.columns([1, 1], gap="large")
 
@@ -216,66 +303,74 @@ if uploaded_file is not None:
         st.subheader("📝 Edit Data")
         st.data_editor(df, num_rows="dynamic", use_container_width=True)
 
-        try:
-            env = Environment(loader=FileSystemLoader('.'))
-            template = env.get_template('template.html')
+        st.info("Change settings freely. PDF will generate only when you click the button below.")
 
-            html_out = template.render(
-                chapters=chapters_data,
-                is_bilingual=is_bilingual,
-                has_five_options=has_five_options,
-                promotion_tier=promo_tier,
-                promo_layout=promo_layout,
-                question_style=question_style,
-                answer_key_format=answer_key_format,
-                user_font_size=selected_font_size,
-                user_color=selected_color,
-                header_left_b64=header_left_b64,
-                header_left_link=header_left_link,
-                header_right_b64=header_right_b64,
-                header_right_link=header_right_link,
-                header_height=header_height,
-                header_logo_width=header_logo_width,
-                footer_b64=footer_b64,
-                footer_link=footer_link,
-                footer_height=footer_height,
-                watermark_b64=watermark_b64,
-                watermark_opacity=watermark_opacity,
-                watermark_angle=watermark_angle
-            )
+        generate_clicked = st.button(
+            "🚀 Generate PDF",
+            type="primary",
+            use_container_width=True
+        )
 
-            pdf_bytes = HTML(string=html_out).write_pdf()
+        if generate_clicked:
+            try:
+                with st.spinner("Generating PDF... Please wait."):
+                    st.session_state.pdf_bytes = build_pdf(
+                        chapters_data=chapters_data,
+                        is_bilingual=is_bilingual,
+                        has_five_options=has_five_options,
+                        promo_tier=promo_tier,
+                        promo_layout=promo_layout,
+                        question_style=question_style,
+                        answer_key_format=answer_key_format,
+                        selected_font_size=selected_font_size,
+                        selected_color=selected_color,
+                        header_left_b64=header_left_b64,
+                        header_left_link=header_left_link,
+                        header_right_b64=header_right_b64,
+                        header_right_link=header_right_link,
+                        header_height=header_height,
+                        header_logo_width=header_logo_width,
+                        footer_b64=footer_b64,
+                        footer_link=footer_link,
+                        footer_height=footer_height,
+                        watermark_b64=watermark_b64,
+                        watermark_opacity=watermark_opacity,
+                        watermark_angle=watermark_angle,
+                        front_page_pdf=front_page_pdf,
+                        last_page_pdf=last_page_pdf
+                    )
 
-            if front_page_pdf or last_page_pdf:
-                merger = PdfWriter()
+                st.success("PDF generated successfully.")
 
-                if front_page_pdf:
-                    merger.append(PdfReader(front_page_pdf))
+            except Exception as e:
+                st.error(f"Error: {e}")
 
-                merger.append(PdfReader(io.BytesIO(pdf_bytes)))
-
-                if last_page_pdf:
-                    merger.append(PdfReader(last_page_pdf))
-
-                out = io.BytesIO()
-                merger.write(out)
-                pdf_bytes = out.getvalue()
-                merger.close()
-
+        if st.session_state.pdf_bytes:
             st.download_button(
                 "📥 Download Final PDF",
-                pdf_bytes,
+                st.session_state.pdf_bytes,
                 "Test_Paper.pdf",
                 "application/pdf",
                 use_container_width=True
             )
 
-        except Exception as e:
-            st.error(f"Error: {e}")
+    with col2:
+        st.subheader("👁️ Live Preview")
 
-    if "pdf_bytes" in locals():
-        with col2:
-            st.subheader("👁️ Live Preview")
-            b64 = base64.b64encode(pdf_bytes).decode('utf-8')
-            display = f'<iframe src="data:application/pdf;base64,{b64}#toolbar=0" width="100%" height="800px"></iframe>'
-            st.markdown(display, unsafe_allow_html=True)
+        if st.session_state.pdf_bytes:
+            show_preview = st.checkbox(
+                "Show Preview",
+                value=False,
+                help="Preview is optional because large PDFs can slow the app."
+            )
+
+            if show_preview:
+                b64 = base64.b64encode(st.session_state.pdf_bytes).decode('utf-8')
+                display = f'<iframe src="data:application/pdf;base64,{b64}#toolbar=0" width="100%" height="800px"></iframe>'
+                st.markdown(display, unsafe_allow_html=True)
+            else:
+                st.info("PDF is ready. Turn on preview only when you need to inspect it.")
+        else:
+            st.info("Click Generate PDF to create preview/download.")
+else:
+    st.info("Upload a CSV file to start.")
