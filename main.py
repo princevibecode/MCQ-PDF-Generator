@@ -16,25 +16,22 @@ st.title("📄 Dynamic Test Paper Generator")
 @st.cache_data
 def process_data(file_data):
     df = pd.read_csv(file_data)
-    # Fillna strictly with empty string to avoid "None" type issues
-    df.fillna("", inplace=True) 
-    
+    df.fillna("", inplace=True)
+
     prefixes = []
     for col in df.columns:
         if col.endswith('_question_text'):
             prefix = col.replace('_question_text', '')
             if prefix and prefix not in prefixes:
                 prefixes.append(prefix)
-                
+
     is_bilingual = len(prefixes) >= 2
-    
-    # Detect 5-option mode: check for option_E column (single) or prefix_option_E (bilingual)
+
     if is_bilingual and len(prefixes) >= 1:
         has_five_options = f"{prefixes[0]}_option_E" in df.columns
     else:
         has_five_options = "option_E" in df.columns
-    
-    # Ensuring every cell is treated as a string to prevent "None" or numbers from breaking
+
     cols_to_clean = [col for col in df.columns if 'question_text' in col or 'option_' in col]
     for col in cols_to_clean:
         df[col] = df[col].apply(lambda x: clean_html_content(str(x)) if str(x).strip() != "" else "")
@@ -44,9 +41,9 @@ def process_data(file_data):
         group_col = f"{prefixes[0]}_chapter"
     elif 'chapter' not in df.columns:
         group_col = df.columns[0] if not df.empty else 'chapter'
-    
+
     grouped = df.groupby(group_col, sort=False)
-    
+
     chapters = []
     for chapter_name, group in grouped:
         rows = []
@@ -55,18 +52,17 @@ def process_data(file_data):
                 p1, p2 = prefixes[0], prefixes[1]
                 tag1 = row.get(f"{p1}_exam_tag", row.get("exam_tag", ""))
                 tag2 = row.get(f"{p2}_exam_tag", row.get("exam_tag", ""))
-                
-                # Force string conversion for question text
+
                 qt1 = str(row[f"{p1}_question_text"]) + (f" &nbsp;<span style='color:#2563EB; font-size:0.9em;'><b>[{tag1}]</b></span>" if str(tag1).strip() else "")
                 qt2 = str(row[f"{p2}_question_text"]) + (f" &nbsp;<span style='color:#2563EB; font-size:0.9em;'><b>[{tag2}]</b></span>" if str(tag2).strip() else "")
-                
+
                 row_data = {
                     'q_num': row.get(f"{p1}_question_number", row.get("question_number", "")),
-                    'q1': qt1, 
-                    'A1': str(row.get(f"{p1}_option_A", "")), 'B1': str(row.get(f"{p1}_option_B", "")), 
+                    'q1': qt1,
+                    'A1': str(row.get(f"{p1}_option_A", "")), 'B1': str(row.get(f"{p1}_option_B", "")),
                     'C1': str(row.get(f"{p1}_option_C", "")), 'D1': str(row.get(f"{p1}_option_D", "")),
-                    'q2': qt2, 
-                    'A2': str(row.get(f"{p2}_option_A", "")), 'B2': str(row.get(f"{p2}_option_B", "")), 
+                    'q2': qt2,
+                    'A2': str(row.get(f"{p2}_option_A", "")), 'B2': str(row.get(f"{p2}_option_B", "")),
                     'C2': str(row.get(f"{p2}_option_C", "")), 'D2': str(row.get(f"{p2}_option_D", "")),
                     'ans': row.get(f"{p1}_correct_answer", row.get("correct_answer", ""))
                 }
@@ -77,18 +73,18 @@ def process_data(file_data):
             else:
                 tag = row.get("exam_tag", "")
                 qt = str(row.get("question_text", "")) + (f" &nbsp;<span style='color:#2563EB; font-size:0.9em;'><b>[{tag}]</b></span>" if str(tag).strip() else "")
-                
+
                 row_data = {
                     'q_num': row.get("question_number", ""),
-                    'q1': qt, 
-                    'A1': str(row.get("option_A", "")), 'B1': str(row.get("option_B", "")), 
+                    'q1': qt,
+                    'A1': str(row.get("option_A", "")), 'B1': str(row.get("option_B", "")),
                     'C1': str(row.get("option_C", "")), 'D1': str(row.get("option_D", "")),
                     'ans': row.get("correct_answer", "")
                 }
                 if has_five_options:
                     row_data['E1'] = str(row.get("option_E", ""))
                 rows.append(row_data)
-                
+
         chapters.append({
             'name': str(chapter_name),
             'count': len(rows),
@@ -106,42 +102,33 @@ def clean_html_content(text):
     if text.strip().lower() in ["nan", ""]:
         return ""
 
-    # 1. Unlock HTML entities
     text = html.unescape(text)
-
-    # 2. Normalize line endings
     text = text.replace('\r\n', '\n').replace('\r', '\n')
 
-    # 3. Compact paragraphs into controlled breaks
     text = re.sub(r'<p[^>]*>', '', text, flags=re.IGNORECASE)
     text = re.sub(r'</p>', '<br>', text, flags=re.IGNORECASE)
 
-    # 4. Table spacing fix:
-    # Remove whitespace/newlines between HTML tags before converting plain-text
-    # newlines to <br>. This prevents invalid <br> tags inside table markup.
     text = re.sub(r'>\s+<', '><', text)
-
-    # 5. Convert only remaining plain-text newlines to breaks
     text = text.replace('\n', '<br>')
 
-    # 6. Max 1 line break allowed between lines
     text = re.sub(r'(<br\s*/?>\s*){2,}', '<br>', text, flags=re.IGNORECASE)
-
-    # 7. Remove breaks directly before/after tables
     text = re.sub(r'(<br\s*/?>\s*)+(?=<table)', '', text, flags=re.IGNORECASE)
     text = re.sub(r'(</table>)(\s*<br\s*/?>)+', r'\1', text, flags=re.IGNORECASE)
 
-    # 8. Trim leading/trailing breaks
     text = text.strip()
     text = re.sub(r'^(<br\s*/?>\s*)+', '', text, flags=re.IGNORECASE)
     text = re.sub(r'(<br\s*/?>\s*)+$', '', text, flags=re.IGNORECASE)
 
-    # 9. Image & maths handling
     text = text.replace('src="//', 'src="https://')
 
     def replace_math(match):
-        encoded = urllib.parse.quote("\\Large " + match.group(1).strip())
-        return f'<img src="https://latex.codecogs.com/svg.image?{encoded}" style="vertical-align: middle; border: none; margin: 0 2px;" />'
+        formula = match.group(1).strip()
+        encoded = urllib.parse.quote(formula)
+        return (
+            f'<img src="https://latex.codecogs.com/svg.image?{encoded}" '
+            f'style="vertical-align: -0.15em; border: none; margin: 0 1px; '
+            f'height: 1.05em; width: auto; display: inline;" />'
+        )
 
     return re.sub(r'\\\((.*?)\\\)', replace_math, text)
 
@@ -154,11 +141,11 @@ def get_base64_image(uploaded_file):
 with st.sidebar:
     st.header("⚙️ Promotion Setup")
     promo_tier = st.radio("Promotion Tier", ["Without Promotions", "With Promotions"])
-    
+
     header_left_b64 = header_right_b64 = footer_b64 = watermark_b64 = None
     header_left_link = header_right_link = footer_link = "https://testbook.com"
     header_height = footer_height = 60
-    header_logo_width = 45 
+    header_logo_width = 45
     watermark_opacity = 0.15
     watermark_angle = -45
     promo_layout = "Only Header"
@@ -192,10 +179,10 @@ with st.sidebar:
 
         st.divider()
         st.header("©️ Watermark")
-        watermark_img_file = st.file_uploader("Watermark Image", type=['png', 'jpg', 'jpeg'])
-        watermark_opacity = st.slider("Watermark Opacity", 0.0, 1.0, 0.15)
-        watermark_angle = st.slider("Watermark Angle", -90, 90, -45)
-        watermark_b64 = get_base64_image(watermark_img_file)
+            watermark_img_file = st.file_uploader("Watermark Image", type=['png', 'jpg', 'jpeg'])
+            watermark_opacity = st.slider("Watermark Opacity", 0.0, 1.0, 0.15)
+            watermark_angle = st.slider("Watermark Angle", -90, 90, -45)
+            watermark_b64 = get_base64_image(watermark_img_file)
 
     st.divider()
     st.header("🎨 Styling & Branding")
@@ -237,9 +224,11 @@ if uploaded_file is not None:
 
             if front_page_pdf or last_page_pdf:
                 merger = PdfWriter()
-                if front_page_pdf: merger.append(PdfReader(front_page_pdf))
+                if front_page_pdf:
+                    merger.append(PdfReader(front_page_pdf))
                 merger.append(PdfReader(io.BytesIO(pdf_bytes)))
-                if last_page_pdf: merger.append(PdfReader(last_page_pdf))
+                if last_page_pdf:
+                    merger.append(PdfReader(last_page_pdf))
                 out = io.BytesIO()
                 merger.write(out)
                 pdf_bytes = out.getvalue()
