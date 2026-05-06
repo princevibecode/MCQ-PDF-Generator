@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -81,11 +81,37 @@
 
         .question-block { break-inside: avoid; margin-bottom: 10px; }
         .question-block img { max-width: 100%; height: auto; display: block; margin: 5px 0; }
+        .question-block img[src*="latex.codecogs.com"],
+        .option-text img[src*="latex.codecogs.com"] {
+            display: inline !important;
+            width: auto !important;
+            max-width: 100% !important;
+            height: auto !important;
+            margin: 0 2px !important;
+            vertical-align: middle;
+        }
 
-        /* Question tables inside cells fix - CSS only, no inline style injection */
-        .question-block table { max-width: 100%; border-collapse: collapse; margin: 5px 0; table-layout: auto; }
-        .question-block table td, .question-block table th { border: 1px solid #ccc; padding: 3px; text-align: center; font-size: 0.9em; word-wrap: break-word; }
+        /* Question tables inside cells fix */
+        .question-block table {
+            width: 100% !important;
+            max-width: 100% !important;
+            border-collapse: collapse;
+            margin: 4px 0 6px 0 !important;
+            table-layout: fixed;
+        }
+        .question-block table td,
+        .question-block table th {
+            border: 1px solid #ccc;
+            padding: 2px 4px;
+            text-align: center;
+            font-size: 0.82em;
+            line-height: 1.25;
+            word-break: break-word;
+            white-space: normal;
+            vertical-align: middle;
+        }
         .question-block table th { background-color: #f2f2f2; }
+        .question-block table br { display: none; }
 
         .q-main-text { font-weight: bold; margin-bottom: 8px; }
         .q-main-text p { display: inline; margin: 0; }
@@ -165,7 +191,7 @@
                     var text  = item.querySelector('.option-text');
                     if (text && label) {
                         // If the option-text itself scrolls (content taller than 1 line)
-                        // we consider it wrapped — compare scrollHeight vs offsetHeight
+                        // we consider it wrapped â€” compare scrollHeight vs offsetHeight
                         if (text.scrollHeight > text.offsetHeight + 4) {
                             wraps = true;
                         }
@@ -363,3 +389,4 @@
 
 </body>
 </html>
+
