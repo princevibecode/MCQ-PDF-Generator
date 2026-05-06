@@ -12,7 +12,6 @@ from pypdf import PdfWriter, PdfReader
 st.set_page_config(page_title="Test Paper Generator", layout="wide")
 st.title("📄 Dynamic Test Paper Generator")
 
-# --- PERFORMANCE OPTIMIZATION: CACHING & DATA PROCESSING ---
 @st.cache_data
 def process_data(file_data):
     df = pd.read_csv(file_data)
@@ -59,16 +58,22 @@ def process_data(file_data):
                 row_data = {
                     'q_num': row.get(f"{p1}_question_number", row.get("question_number", "")),
                     'q1': qt1,
-                    'A1': str(row.get(f"{p1}_option_A", "")), 'B1': str(row.get(f"{p1}_option_B", "")),
-                    'C1': str(row.get(f"{p1}_option_C", "")), 'D1': str(row.get(f"{p1}_option_D", "")),
+                    'A1': str(row.get(f"{p1}_option_A", "")),
+                    'B1': str(row.get(f"{p1}_option_B", "")),
+                    'C1': str(row.get(f"{p1}_option_C", "")),
+                    'D1': str(row.get(f"{p1}_option_D", "")),
                     'q2': qt2,
-                    'A2': str(row.get(f"{p2}_option_A", "")), 'B2': str(row.get(f"{p2}_option_B", "")),
-                    'C2': str(row.get(f"{p2}_option_C", "")), 'D2': str(row.get(f"{p2}_option_D", "")),
+                    'A2': str(row.get(f"{p2}_option_A", "")),
+                    'B2': str(row.get(f"{p2}_option_B", "")),
+                    'C2': str(row.get(f"{p2}_option_C", "")),
+                    'D2': str(row.get(f"{p2}_option_D", "")),
                     'ans': row.get(f"{p1}_correct_answer", row.get("correct_answer", ""))
                 }
+
                 if has_five_options:
                     row_data['E1'] = str(row.get(f"{p1}_option_E", ""))
                     row_data['E2'] = str(row.get(f"{p2}_option_E", ""))
+
                 rows.append(row_data)
             else:
                 tag = row.get("exam_tag", "")
@@ -77,12 +82,16 @@ def process_data(file_data):
                 row_data = {
                     'q_num': row.get("question_number", ""),
                     'q1': qt,
-                    'A1': str(row.get("option_A", "")), 'B1': str(row.get("option_B", "")),
-                    'C1': str(row.get("option_C", "")), 'D1': str(row.get("option_D", "")),
+                    'A1': str(row.get("option_A", "")),
+                    'B1': str(row.get("option_B", "")),
+                    'C1': str(row.get("option_C", "")),
+                    'D1': str(row.get("option_D", "")),
                     'ans': row.get("correct_answer", "")
                 }
+
                 if has_five_options:
                     row_data['E1'] = str(row.get("option_E", ""))
+
                 rows.append(row_data)
 
         chapters.append({
@@ -90,9 +99,9 @@ def process_data(file_data):
             'count': len(rows),
             'rows': rows
         })
+
     return df, chapters, is_bilingual, has_five_options
 
-# --- AGGRESSIVE FIX: CLEANING + TABLE ALIGNMENT + NONE FIX ---
 def clean_html_content(text):
     if not isinstance(text, str):
         if text is None:
@@ -137,7 +146,6 @@ def get_base64_image(uploaded_file):
         return f"data:{uploaded_file.type};base64,{base64.b64encode(uploaded_file.getvalue()).decode()}"
     return None
 
-# --- UI & RENDERING (NO CHANGES HERE) ---
 with st.sidebar:
     st.header("⚙️ Promotion Setup")
     promo_tier = st.radio("Promotion Tier", ["Without Promotions", "With Promotions"])
@@ -152,6 +160,7 @@ with st.sidebar:
 
     if promo_tier == "With Promotions":
         promo_layout = st.radio("Promotion Layout", ["Only Header", "Both Header & Footer"])
+
         st.divider()
         st.header("🖼️ Split Header Settings")
         header_height = st.slider("Header Size (px)", 30, 150, 60)
@@ -162,6 +171,7 @@ with st.sidebar:
             header_left_img = st.file_uploader("Left Header", type=['png', 'jpg', 'jpeg'])
             header_left_link = st.text_input("Left Link", "https://testbook.com")
             header_left_b64 = get_base64_image(header_left_img)
+
         with col_hr:
             header_right_img = st.file_uploader("Right Header", type=['png', 'jpg', 'jpeg'])
             header_right_link = st.text_input("Right Link", "https://testbook.com")
@@ -179,10 +189,10 @@ with st.sidebar:
 
         st.divider()
         st.header("©️ Watermark")
-            watermark_img_file = st.file_uploader("Watermark Image", type=['png', 'jpg', 'jpeg'])
-            watermark_opacity = st.slider("Watermark Opacity", 0.0, 1.0, 0.15)
-            watermark_angle = st.slider("Watermark Angle", -90, 90, -45)
-            watermark_b64 = get_base64_image(watermark_img_file)
+        watermark_img_file = st.file_uploader("Watermark Image", type=['png', 'jpg', 'jpeg'])
+        watermark_opacity = st.slider("Watermark Opacity", 0.0, 1.0, 0.15)
+        watermark_angle = st.slider("Watermark Angle", -90, 90, -45)
+        watermark_b64 = get_base64_image(watermark_img_file)
 
     st.divider()
     st.header("🎨 Styling & Branding")
@@ -205,36 +215,61 @@ if uploaded_file is not None:
     with col1:
         st.subheader("📝 Edit Data")
         st.data_editor(df, num_rows="dynamic", use_container_width=True)
+
         try:
             env = Environment(loader=FileSystemLoader('.'))
             template = env.get_template('template.html')
+
             html_out = template.render(
-                chapters=chapters_data, is_bilingual=is_bilingual, has_five_options=has_five_options,
-                promotion_tier=promo_tier, promo_layout=promo_layout,
-                question_style=question_style, answer_key_format=answer_key_format,
-                user_font_size=selected_font_size, user_color=selected_color,
-                header_left_b64=header_left_b64, header_left_link=header_left_link,
-                header_right_b64=header_right_b64, header_right_link=header_right_link,
-                header_height=header_height, header_logo_width=header_logo_width,
-                footer_b64=footer_b64, footer_link=footer_link, footer_height=footer_height,
-                watermark_b64=watermark_b64, watermark_opacity=watermark_opacity,
+                chapters=chapters_data,
+                is_bilingual=is_bilingual,
+                has_five_options=has_five_options,
+                promotion_tier=promo_tier,
+                promo_layout=promo_layout,
+                question_style=question_style,
+                answer_key_format=answer_key_format,
+                user_font_size=selected_font_size,
+                user_color=selected_color,
+                header_left_b64=header_left_b64,
+                header_left_link=header_left_link,
+                header_right_b64=header_right_b64,
+                header_right_link=header_right_link,
+                header_height=header_height,
+                header_logo_width=header_logo_width,
+                footer_b64=footer_b64,
+                footer_link=footer_link,
+                footer_height=footer_height,
+                watermark_b64=watermark_b64,
+                watermark_opacity=watermark_opacity,
                 watermark_angle=watermark_angle
             )
+
             pdf_bytes = HTML(string=html_out).write_pdf()
 
             if front_page_pdf or last_page_pdf:
                 merger = PdfWriter()
+
                 if front_page_pdf:
                     merger.append(PdfReader(front_page_pdf))
+
                 merger.append(PdfReader(io.BytesIO(pdf_bytes)))
+
                 if last_page_pdf:
                     merger.append(PdfReader(last_page_pdf))
+
                 out = io.BytesIO()
                 merger.write(out)
                 pdf_bytes = out.getvalue()
                 merger.close()
 
-            st.download_button("📥 Download Final PDF", pdf_bytes, "Test_Paper.pdf", "application/pdf", use_container_width=True)
+            st.download_button(
+                "📥 Download Final PDF",
+                pdf_bytes,
+                "Test_Paper.pdf",
+                "application/pdf",
+                use_container_width=True
+            )
+
         except Exception as e:
             st.error(f"Error: {e}")
 
